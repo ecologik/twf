@@ -1,5 +1,5 @@
 # Local backup deploy: builds and uploads dist/ to twf.ecologik.net over SSH.
-# Use when the GitHub Actions deploy can't run. Usage: .\deploy.ps1
+# Pushes to GitHub first. Usage: .\deploy.ps1
 $ErrorActionPreference = 'Stop'
 Set-Location $PSScriptRoot
 
@@ -11,6 +11,10 @@ $SshOpts = @('-i', $Key, '-o', 'BatchMode=yes', '-o', 'IdentitiesOnly=yes')
 if (git status --porcelain) {
     Write-Error 'Uncommitted changes. Commit (or stash) them before deploying.'
 }
+
+# Keep GitHub in step with what goes live.
+git push
+if ($LASTEXITCODE -ne 0) { Write-Error 'git push failed; not deploying.' }
 
 npm run build
 if ($LASTEXITCODE -ne 0) { Write-Error 'Build failed.' }
