@@ -1,8 +1,7 @@
 name: Deploy to VPS
 
 on:
-  push:
-    branches: [main]
+  # Manual only: the VPS firewall limits SSH to Jon's IP, so deploys run via deploy.ps1.
   workflow_dispatch:
 
 concurrency:
