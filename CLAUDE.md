@@ -12,7 +12,7 @@ Deployed as static files to twf.ecologik.net on Jon's GreenGeeks cPanel VPS (vps
 - Only the anon key in frontend code. The service_role key never goes in React or any `VITE_` variable, only in Edge Function secrets.
 
 ## Supabase
-- Separate project from Reliance.
+- Project URL: https://jhowpquqdmdjwviqnjll.supabase.co (separate project from Reliance).
 - Every table gets RLS plus at least one policy (RLS with zero policies silently returns empty results).
 - Schema changes live as SQL files in `supabase/migrations/`.
 - Edge Functions deploy with `npx -y supabase functions deploy <name>`.
