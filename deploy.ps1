@@ -27,7 +27,7 @@ Remove-Item $Tar
 # Replace the old site files, but never touch .well-known (AutoSSL) or cgi-bin.
 $RemoteCmd = 'set -e; cd ~/public_html; ' +
     'find . -mindepth 1 -maxdepth 1 ! -name .well-known ! -name cgi-bin -exec rm -rf {} +; ' +
-    'tar -xf ~/twf-dist.tar -C ~/public_html; rm -f ~/twf-dist.tar; echo DEPLOYED'
+    'tar --no-overwrite-dir -xf ~/twf-dist.tar -C ~/public_html; rm -f ~/twf-dist.tar; echo DEPLOYED'
 ssh @SshOpts $Remote $RemoteCmd
 if ($LASTEXITCODE -ne 0) { Write-Error 'Remote install failed.' }
 
