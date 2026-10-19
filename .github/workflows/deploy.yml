@@ -43,6 +43,6 @@ jobs:
 
       - name: Upload with rsync
         run: |
-          rsync -az --delete \
+          rsync -az --delete --exclude='.well-known' --exclude='cgi-bin' \
             -e "ssh -i ~/.ssh/deploy_key -p ${{ secrets.DEPLOY_PORT || '22' }}" \
             dist/ "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}:~/public_html/"
