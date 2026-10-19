@@ -22,5 +22,6 @@ Client-side routes rely on `public/.htaccess` (SPA rewrite). Don't remove it.
 
 ## Deploy
 - `.github/workflows/deploy.yml` builds on GitHub and rsyncs `dist/` to `~/public_html`.
-- The push trigger is off (manual `workflow_dispatch` only) until the server and secrets are set up.
+- Every push to `main` deploys (also runnable by hand via `workflow_dispatch`). Secrets live in the GitHub repo settings.
+- rsync excludes `.well-known` (AutoSSL) and `cgi-bin` so deploys don't delete them.
 - If deploying from a local build instead, commit first: a local build ships the working tree, not git.

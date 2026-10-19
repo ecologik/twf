@@ -1,9 +1,8 @@
 name: Deploy to VPS
 
 on:
-  # enable once server + secrets are set up
-  # push:
-  #   branches: [main]
+  push:
+    branches: [main]
   workflow_dispatch:
 
 concurrency:
