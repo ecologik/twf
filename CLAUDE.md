@@ -26,6 +26,6 @@ Client-side routes rely on `public/.htaccess` (SPA rewrite). Don't remove it. It
 
 ## Auth and roles
 - Sign-in with Google or email + password (Supabase Auth, email must be confirmed). New users get a `profiles` row with role `pending` and see nothing until an admin picks `admin` (whole dashboard), `board` (Board section only) or `denied` on `/admin/users`.
-- Nothing happens until the email is confirmed (Google sign-ins arrive confirmed). Then emails in `signup_approvers` become admin, and anyone else triggers a SendGrid email from the `notify-signup` Edge Function to approvers with `receives_emails`. Supabase Auth's own emails go through SendGrid SMTP. Deploy it with `--no-verify-jwt` (the database trigger calls it).
+- Nothing happens until the email is confirmed (Google sign-ins arrive confirmed). Then emails in `signup_approvers` become admin, and anyone else triggers a SendGrid email from the `notify-signup` Edge Function to approvers with `receives_emails`. Supabase Auth's own emails go through SendGrid SMTP. Deploy `notify-signup` with `--no-verify-jwt` (the database trigger calls it).
 - Roles are enforced in RLS. Every new table's policies use `public.is_admin()` or `public.is_board_or_admin()`, never a bare `to authenticated` (pending users are authenticated). Frontend `RequireRole` is only for the UI.
 - Setup steps (Google Cloud, Supabase, SendGrid): `docs/auth-setup.md`.
