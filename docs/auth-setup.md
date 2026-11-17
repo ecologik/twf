@@ -60,6 +60,9 @@ Ideally do this signed in as a TWF Google account, so the app belongs to TWF.
 
 ## 4. Site
 
+The Google consent screen links to `https://twf.ecologik.net/privacy`, which this PR adds (public, no sign-in).
+
+
 Merge the PR, pull in twf-dash, and run `.\deploy.ps1`.
 
 ## Check it works

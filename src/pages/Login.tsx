@@ -1,4 +1,4 @@
-import { Navigate } from 'react-router-dom'
+import { Link, Navigate } from 'react-router-dom'
 import { homeFor, useAuth } from '../auth/context'
 
 export default function Login() {
@@ -16,6 +16,9 @@ export default function Login() {
       </button>
       <p className="muted small">
         New here? After you sign in, the Foundation will review your request and choose what you can see.
+      </p>
+      <p className="small">
+        <Link to="/privacy">Privacy policy</Link>
       </p>
     </div>
   )

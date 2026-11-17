@@ -61,3 +61,7 @@ td.actions { display: flex; gap: 0.5rem; flex-wrap: wrap; justify-content: flex-
 .badge.admin { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
 .badge.board { border-color: var(--accent); color: var(--accent); }
 .badge.denied { color: var(--danger); border-color: var(--danger); }
+
+.prose { max-width: 720px; margin: 1rem auto; }
+.prose h2 { font-size: 1.15rem; margin-top: 1.5rem; }
+a { color: var(--accent); }
