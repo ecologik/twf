@@ -13,8 +13,12 @@ export default function Privacy() {
 
       <h2>What we collect</h2>
       <p>
-        When you sign in with Google, we receive your name, email address and profile picture from your Google
-        account. We do not get your Google password, and we do not access your Gmail, contacts, calendar or files.
+        If you sign in with Google, we receive your name, email address and profile picture from your Google account.
+        We do not get your Google password, and we do not access your Gmail, contacts, calendar or files.
+      </p>
+      <p>
+        If you create an account with your email address instead, we store your name, email address and a securely
+        hashed version of your password (never the password itself).
       </p>
 
       <h2>How we use it</h2>
@@ -30,7 +34,7 @@ export default function Privacy() {
       <h2>Who it's shared with</h2>
       <p>
         We don't sell or share your information. It is stored with our service providers that run the dashboard:
-        Supabase (database and sign-in) and SendGrid (sending the approval email). They process it only to provide
+        Supabase (database and sign-in) and SendGrid (sending account and approval emails). They process it only to provide
         those services.
       </p>
 

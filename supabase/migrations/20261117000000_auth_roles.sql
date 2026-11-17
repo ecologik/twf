@@ -1,14 +1,15 @@
 -- Google sign-in with approval.
 --
--- Every new sign-in gets a row in public.profiles with role 'pending'.
+-- Sign-in is with Google or with email + password. Every new account gets a
+-- row in public.profiles with role 'pending'.
 -- Pending (and denied) users can read only their own profile and nothing else.
 -- An admin sets the role to 'admin' (whole dashboard) or 'board' (Board
 -- section only). The roles are enforced here with RLS, not only in the UI.
 --
 -- People listed in public.signup_approvers (Lyn, Mariah, ...) become admins
--- automatically on their first sign-in. The ones with receives_emails = true
--- get an email from the notify-signup Edge Function whenever someone new
--- signs up.
+-- automatically once their email is confirmed. The ones with
+-- receives_emails = true get an email from the notify-signup Edge Function
+-- whenever someone new confirms their email and is waiting.
 
 create extension if not exists pg_net with schema extensions;
 
@@ -85,9 +86,41 @@ grant  execute on function public.is_admin()          to authenticated;
 grant  execute on function public.is_board_or_admin() to authenticated;
 
 -- ---------------------------------------------------------------------------
--- New user -> profile row (pending, or admin if listed in signup_approvers),
--- then ask the notify-signup Edge Function to email the approvers.
+-- New user -> profile row (always 'pending' at first).
+--
+-- Nothing else happens until the email address is confirmed. Google sign-ins
+-- arrive already confirmed; email/password sign-ups are confirmed when the
+-- person clicks the link Supabase emails them. At that point:
+--   * an email listed in signup_approvers becomes admin, or
+--   * otherwise the notify-signup Edge Function emails the approvers.
+-- This way nobody can claim an approver's address (or spam Lyn and Mariah)
+-- with an email they don't own.
 -- ---------------------------------------------------------------------------
+
+create or replace function public.handle_user_confirmed(p_user_id uuid, p_email text)
+returns void
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  if exists (select 1 from public.signup_approvers where email = lower(p_email)) then
+    update public.profiles
+       set role = 'admin', approved_at = now()
+     where id = p_user_id and role = 'pending';
+  else
+    -- Fire and forget. The function itself checks that this user really is
+    -- confirmed, pending and not yet notified, so the call needs no secret.
+    perform net.http_post(
+      url     := 'https://jhowpquqdmdjwviqnjll.supabase.co/functions/v1/notify-signup',
+      body    := jsonb_build_object('user_id', p_user_id),
+      headers := jsonb_build_object('Content-Type', 'application/json')
+    );
+  end if;
+end;
+$$;
+
+revoke execute on function public.handle_user_confirmed(uuid, text) from public, anon, authenticated;
 
 create or replace function public.handle_new_user()
 returns trigger
@@ -95,34 +128,31 @@ language plpgsql
 security definer
 set search_path = ''
 as $$
-declare
-  v_email text := lower(coalesce(new.email, ''));
-  v_role  text := 'pending';
 begin
-  if exists (select 1 from public.signup_approvers where email = v_email) then
-    v_role := 'admin';
-  end if;
-
-  insert into public.profiles (id, email, full_name, avatar_url, role, approved_at)
+  insert into public.profiles (id, email, full_name, avatar_url)
   values (
     new.id,
-    v_email,
+    lower(coalesce(new.email, '')),
     coalesce(new.raw_user_meta_data ->> 'full_name', new.raw_user_meta_data ->> 'name'),
-    new.raw_user_meta_data ->> 'avatar_url',
-    v_role,
-    case when v_role = 'admin' then now() end
+    new.raw_user_meta_data ->> 'avatar_url'
   );
 
-  if v_role = 'pending' then
-    -- Fire and forget. The function itself checks that this user really is
-    -- pending and not yet notified, so the call needs no secret.
-    perform net.http_post(
-      url     := 'https://jhowpquqdmdjwviqnjll.supabase.co/functions/v1/notify-signup',
-      body    := jsonb_build_object('user_id', new.id),
-      headers := jsonb_build_object('Content-Type', 'application/json')
-    );
+  if new.email_confirmed_at is not null then
+    perform public.handle_user_confirmed(new.id, new.email);
   end if;
 
+  return new;
+end;
+$$;
+
+create or replace function public.handle_user_email_confirmed()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  perform public.handle_user_confirmed(new.id, new.email);
   return new;
 end;
 $$;
@@ -130,6 +160,12 @@ $$;
 create trigger on_auth_user_created
   after insert on auth.users
   for each row execute function public.handle_new_user();
+
+create trigger on_auth_user_email_confirmed
+  after update of email_confirmed_at on auth.users
+  for each row
+  when (old.email_confirmed_at is null and new.email_confirmed_at is not null)
+  execute function public.handle_user_email_confirmed();
 
 -- ---------------------------------------------------------------------------
 -- Role changes: record who approved, and stop an admin changing their own

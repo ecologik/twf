@@ -7,6 +7,7 @@ import Board from './pages/Board'
 import Login from './pages/Login'
 import Pending from './pages/Pending'
 import Privacy from './pages/Privacy'
+import ResetPassword from './pages/ResetPassword'
 import Users from './pages/admin/Users'
 
 function Nav() {
@@ -36,6 +37,7 @@ function App() {
             <Route path="/login" element={<Login />} />
             <Route path="/pending" element={<Pending />} />
             <Route path="/privacy" element={<Privacy />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/" element={<RequireRole allow={['admin']}><Home /></RequireRole>} />
             <Route path="/board" element={<RequireRole allow={['admin', 'board']}><Board /></RequireRole>} />
             <Route path="/admin/users" element={<RequireRole allow={['admin']}><Users /></RequireRole>} />

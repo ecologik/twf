@@ -1,5 +1,6 @@
 // notify-signup: emails the approvers (public.signup_approvers with
-// receives_emails = true) when someone new signs in and is waiting for access.
+// receives_emails = true) when someone new has confirmed their email (or
+// signed in with Google) and is waiting for access.
 //
 // Called by the on_auth_user_created trigger with { user_id }. Deployed with
 // --no-verify-jwt because the database calls it without a user token. That is
@@ -37,6 +38,11 @@ Deno.serve(async (req) => {
     auth: { persistSession: false },
   })
 
+  // Only for a confirmed email address (Google sign-ins always are).
+  const { data: authUser, error: userError } = await admin.auth.admin.getUserById(userId)
+  if (userError || !authUser?.user) return json({ skipped: 'no such user' })
+  if (!authUser.user.email_confirmed_at) return json({ skipped: 'email not confirmed yet' })
+
   // Claim the notification atomically, so a retry never sends twice.
   const { data: profile, error: claimError } = await admin
     .from('profiles')
@@ -66,11 +72,11 @@ Deno.serve(async (req) => {
 
   const subject = `New dashboard sign-up: ${profile.full_name ?? profile.email}`
   const text =
-    `${who} signed in to the Watershed Foundation dashboard and is waiting for access.\n\n` +
+    `${who} signed up for the Watershed Foundation dashboard and is waiting for access.\n\n` +
     `Choose Admin (whole dashboard), Board (Board section only) or Deny here:\n${link}\n\n` +
     `They can't see anything until you choose.`
   const html =
-    `<p><strong>${escapeHtml(who)}</strong> signed in to the Watershed Foundation dashboard and is waiting for access.</p>` +
+    `<p><strong>${escapeHtml(who)}</strong> signed up for the Watershed Foundation dashboard and is waiting for access.</p>` +
     `<p>Choose <strong>Admin</strong> (whole dashboard), <strong>Board</strong> (Board section only) or <strong>Deny</strong>:</p>` +
     `<p><a href="${link}">Review sign-ups</a></p>` +
     `<p style="color:#666">They can't see anything until you choose.</p>`

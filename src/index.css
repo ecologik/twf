@@ -65,3 +65,17 @@ td.actions { display: flex; gap: 0.5rem; flex-wrap: wrap; justify-content: flex-
 .prose { max-width: 720px; margin: 1rem auto; }
 .prose h2 { font-size: 1.15rem; margin-top: 1.5rem; }
 a { color: var(--accent); }
+
+.wide { width: 100%; }
+.stack { display: flex; flex-direction: column; gap: 0.75rem; }
+label { display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.9rem; }
+input {
+  font: inherit; padding: 0.5rem 0.6rem; border-radius: 6px;
+  border: 1px solid var(--border); background: var(--bg); color: var(--text);
+}
+input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+.divider { display: flex; align-items: center; gap: 0.75rem; margin: 1.25rem 0; color: var(--muted); font-size: 0.85rem; }
+.divider::before, .divider::after { content: ''; flex: 1; border-top: 1px solid var(--border); }
+.notice { color: var(--accent); }
+.links { display: flex; justify-content: space-between; gap: 1rem; }
+button.link { border: 0; background: none; padding: 0; color: var(--accent); text-decoration: underline; }

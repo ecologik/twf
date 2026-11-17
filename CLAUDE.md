@@ -25,7 +25,7 @@ Client-side routes rely on `public/.htaccess` (SPA rewrite). Don't remove it. It
 - `.github/workflows/deploy.yml` is a manual-only (`workflow_dispatch`) backup. The VPS firewall only allows SSH from Jon's IP, so GitHub's runners can't connect. Don't re-enable the push trigger unless that changes.
 
 ## Auth and roles
-- Google sign-in only (Supabase Auth). New users get a `profiles` row with role `pending` and see nothing until an admin picks `admin` (whole dashboard), `board` (Board section only) or `denied` on `/admin/users`.
-- Emails in `signup_approvers` become admin on first sign-in; those with `receives_emails` get a SendGrid email from the `notify-signup` Edge Function on each new sign-up. Deploy it with `--no-verify-jwt` (the database trigger calls it).
+- Sign-in with Google or email + password (Supabase Auth, email must be confirmed). New users get a `profiles` row with role `pending` and see nothing until an admin picks `admin` (whole dashboard), `board` (Board section only) or `denied` on `/admin/users`.
+- Nothing happens until the email is confirmed (Google sign-ins arrive confirmed). Then emails in `signup_approvers` become admin, and anyone else triggers a SendGrid email from the `notify-signup` Edge Function to approvers with `receives_emails`. Supabase Auth's own emails go through SendGrid SMTP. Deploy it with `--no-verify-jwt` (the database trigger calls it).
 - Roles are enforced in RLS. Every new table's policies use `public.is_admin()` or `public.is_board_or_admin()`, never a bare `to authenticated` (pending users are authenticated). Frontend `RequireRole` is only for the UI.
 - Setup steps (Google Cloud, Supabase, SendGrid): `docs/auth-setup.md`.
