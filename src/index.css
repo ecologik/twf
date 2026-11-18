@@ -1,4 +1,8 @@
 :root {
+  --subnav-bg: #eef0f2;
+  --subnav-line: #dde1e5;
+  --subnav-text: #33424d;
+  --subnav-active: #0e3853;
   --twf-navy: #0e3853;
   --twf-green: #8ac641;
   --bg: #fbfaf6;
@@ -17,6 +21,10 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
+    --subnav-bg: #1d2329;
+    --subnav-line: #2d363e;
+    --subnav-text: #c4ccd3;
+    --subnav-active: #ffffff;
     --bg: #141612;
     --surface: #1c1f1a;
     --text: #ecebe4;
@@ -56,7 +64,24 @@ button.topnav-button {
   font-weight: 700; text-transform: uppercase; font-size: 0.85rem; padding: 0.5rem 1rem;
 }
 button.topnav-button:hover { filter: brightness(1.05); }
+/* Grey second row with the dashboard sections */
+.subnav { background: var(--subnav-bg); border-bottom: 1px solid var(--subnav-line); }
+.subnav-inner {
+  max-width: 1100px; margin: 0 auto; padding: 0 1rem;
+  display: flex; align-items: center; gap: 0.25rem; overflow-x: auto; scrollbar-width: none;
+}
+.subnav-inner::-webkit-scrollbar { display: none; }
+.subnav-item { display: flex; align-items: center; flex-shrink: 0; }
+.subnav a {
+  color: var(--subnav-text); text-decoration: none; font-weight: 600; font-size: 0.9rem;
+  padding: 0.7rem 0.85rem; white-space: nowrap; border-bottom: 3px solid transparent;
+}
+.subnav a:hover { color: var(--subnav-active); }
+.subnav a.active { color: var(--subnav-active); border-bottom-color: var(--subnav-active); }
+.subnav-sep { width: 1px; height: 1.2rem; background: var(--subnav-line); margin: 0 0.4rem; }
+
 @media (max-width: 640px) {
+  .subnav-inner { padding: 0 0.5rem; mask-image: linear-gradient(90deg, #000 85%, transparent); }
   .topnav-inner { gap: 0.75rem 1.25rem; }
   .topnav-links { order: 3; flex-basis: 100%; gap: 1.25rem; }
   .topnav-email { display: none; }
