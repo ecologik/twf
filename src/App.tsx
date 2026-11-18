@@ -1,4 +1,5 @@
-import { BrowserRouter, NavLink, Navigate, Route, Routes } from 'react-router-dom'
+import { BrowserRouter, Link, NavLink, Navigate, Route, Routes } from 'react-router-dom'
+import logo from './assets/twf-logo-white.png'
 import { AuthProvider } from './auth/AuthProvider'
 import { useAuth } from './auth/context'
 import RequireRole from './auth/RequireRole'
@@ -12,18 +13,29 @@ import Users from './pages/admin/Users'
 
 function Nav() {
   const { profile, signOut } = useAuth()
-  if (!profile || (profile.role !== 'admin' && profile.role !== 'board')) return null
-  const isAdmin = profile.role === 'admin'
+  const approved = profile && (profile.role === 'admin' || profile.role === 'board')
+  const isAdmin = profile?.role === 'admin'
   return (
-    <nav className="topnav">
-      <span className="brand">Watershed Foundation</span>
-      {isAdmin && <NavLink to="/" end>Home</NavLink>}
-      <NavLink to="/board">Board</NavLink>
-      {isAdmin && <NavLink to="/admin/users">Users</NavLink>}
-      <span className="spacer" />
-      <span className="muted small">{profile.email}</span>
-      <button onClick={signOut}>Sign out</button>
-    </nav>
+    <header className="topnav">
+      <div className="topnav-inner">
+        <Link to="/" className="topnav-logo" aria-label="The Watershed Foundation dashboard home">
+          <img src={logo} alt="TWF, The Watershed Foundation" width={449} height={200} />
+        </Link>
+        {approved && (
+          <>
+            <nav className="topnav-links">
+              {isAdmin && <NavLink to="/" end>Home</NavLink>}
+              <NavLink to="/board">Board</NavLink>
+              {isAdmin && <NavLink to="/admin/users">Users</NavLink>}
+            </nav>
+            <div className="topnav-user">
+              <span className="topnav-email">{profile.email}</span>
+              <button className="topnav-button" onClick={signOut}>Sign out</button>
+            </div>
+          </>
+        )}
+      </div>
+    </header>
   )
 }
 
