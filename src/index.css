@@ -143,16 +143,28 @@ table.list a { color: var(--text); text-decoration: none; }
 tr.clickable { cursor: pointer; }
 tr.clickable:hover { background: var(--bg); }
 .mono { font-variant-numeric: tabular-nums; }
-.project-form { display: grid; grid-template-columns: minmax(260px, 1fr) 2fr; gap: 1.5rem; align-items: start; }
-.coords { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+.project-form { max-width: 560px; }
+.coords { display: grid; grid-template-columns: 1fr 1fr auto; gap: 0.75rem; align-items: end; }
+button.icon-button { display: inline-flex; align-items: center; justify-content: center; padding: 0; width: 2.5rem; height: 2.5rem; font-size: 1.4rem; line-height: 1; }
+button.pin-button { color: var(--accent); }
+button.pin-button:hover { border-color: var(--accent); }
+.location-dialog {
+  width: min(900px, calc(100vw - 2rem)); max-height: calc(100vh - 2rem); padding: 0;
+  border: 1px solid var(--border); border-radius: 10px; background: var(--surface); color: var(--text);
+}
+.location-dialog-body { padding: 1rem 1.25rem; }
+.location-dialog::backdrop { background: rgba(10, 20, 30, 0.45); }
+.location-dialog-head { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 0.75rem; }
+.location-dialog-head h2 { margin: 0; font-size: 1.1rem; }
+.location-dialog-head .icon-button { border: 0; width: 2rem; height: 2rem; }
+.location-dialog-foot { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; flex-wrap: wrap; }
+.location-dialog .map.picker { height: min(60vh, 520px); }
 .coords label { min-width: 0; }
 .coords input { width: 100%; }
 .form-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
 button.danger { color: var(--danger); border-color: var(--danger); margin-left: auto; }
-button.link.small { align-self: flex-start; }
 @media (max-width: 760px) {
-  .project-form { grid-template-columns: 1fr; }
-  .map.picker { height: 340px; }
+  .location-dialog-body { padding: 0.75rem; }
   .map.overview { height: 260px; }
   table.list th:nth-child(3), table.list td:nth-child(3) { display: none; }
 }
