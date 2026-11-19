@@ -5,7 +5,7 @@ export const PROJECT_TABS: { key: TabKey; label: string; blurb: string }[] = [
   { key: 'overview', label: 'Overview', blurb: '' },
   { key: 'milestones', label: 'Milestones', blurb: 'Milestones with owners and due dates, from planning to close-out.' },
   { key: 'load', label: 'Load model', blurb: "Load-reduction estimates for this project's practices." },
-  { key: 'map', label: 'Map', blurb: "The project's footprint drawn on a map, saved as an image for reports." },
+  { key: 'map', label: 'Map', blurb: '' },
   { key: 'funding', label: 'Funding', blurb: 'Which grants and funds pay for this project, and how much has been spent.' },
   { key: 'people', label: 'People', blurb: 'Landowners, partners and contractors on this project, and why each one is on it.' },
   { key: 'notes', label: 'Notes', blurb: 'Site visit notes and photos.' },
@@ -45,6 +45,7 @@ export default function ProjectTabs({
 
 export function TabPlaceholder({ tab }: { tab: TabKey }) {
   const t = PROJECT_TABS.find((x) => x.key === tab)!
+  // Map has its own component (MapTab); the rest show this until they're built.
   return (
     <section className="card tab-placeholder">
       <h2 className="card-title">{t.label}</h2>

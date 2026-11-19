@@ -167,6 +167,26 @@ button.tab:hover { color: var(--text); }
 button.tab.active { color: var(--text); font-weight: 600; border-bottom-color: var(--accent); }
 .tab-count { font-size: 0.75rem; padding: 0 0.4rem; border-radius: 999px; background: var(--border); color: var(--muted); font-weight: 500; }
 .tab-placeholder { max-width: 720px; }
+
+/* Project Map tab */
+.map-tab { display: grid; grid-template-columns: 1fr 300px; gap: 1rem; align-items: start; }
+.map.drawing { height: min(70vh, 620px); }
+.shape-list { padding: 1rem; display: flex; flex-direction: column; gap: 0.6rem; }
+.shape-list .card-title { margin: 0; }
+.shape-list ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.4rem; }
+.shape-list li { display: grid; grid-template-columns: auto 1fr auto; gap: 0.4rem; align-items: center; }
+.shape-list li input { min-width: 0; padding: 0.35rem 0.5rem; font-size: 0.9rem; }
+.shape-list p { margin: 0; }
+button.shape-kind { font-size: 0.75rem; padding: 0.2rem 0.5rem; border-radius: 999px; font-weight: 600; width: 3.6rem; }
+button.shape-kind.area { border-color: #d9a520; color: #9a7310; }
+button.shape-kind.line { border-color: #2a9fd6; color: #1f7aa6; }
+button.shape-kind.point { border-color: var(--accent); color: var(--accent); }
+button.icon-button.small-x { width: 1.9rem; height: 1.9rem; border: 0; font-size: 1.2rem; color: var(--muted); }
+.leaflet-tooltip.shape-label {
+  background: none; border: 0; box-shadow: none; padding: 0; font-weight: 600; font-size: 13px;
+  color: #fff; text-shadow: 0 0 3px #000, 0 0 3px #000, 0 0 2px #000;
+}
+.leaflet-tooltip.shape-label::before { display: none; }
 .field-head { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; margin-bottom: 0.25rem; }
 .field-head label { display: inline; font-weight: 600; }
 .field-head label .muted { font-weight: 400; margin-left: 0.4rem; }
@@ -194,6 +214,8 @@ button.danger { color: var(--danger); border-color: var(--danger); margin-left: 
   .location-dialog-body { padding: 0.75rem; }
   .project-overview { grid-template-columns: 1fr; }
   .project-overview .cover-card { order: 2; }
+  .map-tab { grid-template-columns: 1fr; }
+  .map.drawing { height: 60vh; }
   .map.overview { height: 260px; }
   table.list th:nth-child(3), table.list td:nth-child(3) { display: none; }
 }

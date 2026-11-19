@@ -6,7 +6,7 @@ import shadowUrl from 'leaflet/dist/images/marker-shadow.png'
 
 // Leaflet's default pin looks for its images by a path Vite doesn't serve, so
 // every marker uses the bundled copies instead.
-L.Marker.prototype.options.icon = L.icon({
+export const PIN_ICON = L.icon({
   iconUrl,
   iconRetinaUrl,
   shadowUrl,
@@ -18,6 +18,7 @@ L.Marker.prototype.options.icon = L.icon({
   shadowSize: [21, 21],
   shadowAnchor: [6, 21],
 })
+L.Marker.prototype.options.icon = PIN_ICON
 
 /** Where a new map opens: TWF's lakes in Kosciusko County, Indiana. */
 export const DEFAULT_CENTER: [number, number] = [41.32, -85.78]
@@ -27,12 +28,16 @@ export const STREETS = {
   url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
   attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
   maxZoom: 19,
+  // Lets the tiles be copied into a PNG (see exportPng.ts).
+  crossOrigin: 'anonymous' as const,
 }
 
 export const SATELLITE = {
   url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
   attribution: 'Imagery &copy; Esri, Maxar, Earthstar Geographics and the GIS User Community',
   maxZoom: 19,
+  // Lets the tiles be copied into a PNG (see exportPng.ts).
+  crossOrigin: 'anonymous' as const,
 }
 
 /** Road and place names drawn on top of the satellite imagery. */
@@ -40,4 +45,6 @@ export const SATELLITE_LABELS = {
   url: 'https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}',
   attribution: '',
   maxZoom: 19,
+  // Lets the tiles be copied into a PNG (see exportPng.ts).
+  crossOrigin: 'anonymous' as const,
 }
