@@ -1,3 +1,4 @@
+import { lazy, Suspense } from 'react'
 import { BrowserRouter, Link, NavLink, Navigate, Route, Routes } from 'react-router-dom'
 import logo from './assets/twf-logo-white.png'
 import { AuthProvider } from './auth/AuthProvider'
@@ -10,6 +11,10 @@ import Privacy from './pages/Privacy'
 import ResetPassword from './pages/ResetPassword'
 import Users from './pages/admin/Users'
 import SectionPlaceholder from './pages/SectionPlaceholder'
+
+// The map library is big, so the Projects pages load only when opened.
+const ProjectList = lazy(() => import('./pages/projects/ProjectList'))
+const ProjectForm = lazy(() => import('./pages/projects/ProjectForm'))
 import { SECTIONS } from './nav/sections'
 
 function Nav() {
@@ -65,22 +70,27 @@ function App() {
         <Nav />
         <SubNav />
         <main>
-          <Routes>
-            <Route path="/login" element={<Login />} />
-            <Route path="/pending" element={<Pending />} />
-            <Route path="/privacy" element={<Privacy />} />
-            <Route path="/reset-password" element={<ResetPassword />} />
-            <Route path="/" element={<RequireRole allow={['admin']}><Home /></RequireRole>} />
-            {SECTIONS.map((s) => (
-              <Route
-                key={s.path}
-                path={s.path}
-                element={<RequireRole allow={s.roles}><SectionPlaceholder section={s} /></RequireRole>}
-              />
-            ))}
-            <Route path="/admin/users" element={<RequireRole allow={['admin']}><Users /></RequireRole>} />
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
+          <Suspense fallback={<p className="muted">Loading…</p>}>
+            <Routes>
+              <Route path="/login" element={<Login />} />
+              <Route path="/pending" element={<Pending />} />
+              <Route path="/privacy" element={<Privacy />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
+              <Route path="/" element={<RequireRole allow={['admin']}><Home /></RequireRole>} />
+              <Route path="/projects" element={<RequireRole allow={['admin']}><ProjectList /></RequireRole>} />
+              <Route path="/projects/new" element={<RequireRole allow={['admin']}><ProjectForm /></RequireRole>} />
+              <Route path="/projects/:id" element={<RequireRole allow={['admin']}><ProjectForm /></RequireRole>} />
+              {SECTIONS.filter((s) => s.path !== '/projects').map((s) => (
+                <Route
+                  key={s.path}
+                  path={s.path}
+                  element={<RequireRole allow={s.roles}><SectionPlaceholder section={s} /></RequireRole>}
+                />
+              ))}
+              <Route path="/admin/users" element={<RequireRole allow={['admin']}><Users /></RequireRole>} />
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </Suspense>
         </main>
       </BrowserRouter>
     </AuthProvider>
