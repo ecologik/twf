@@ -2,7 +2,8 @@
 -- Names come from the prototype; locations are rough points around
 -- Kosciusko County, Indiana. None of this is real TWF data.
 --
--- Run once in the Supabase SQL Editor after the projects migration.
+-- Run once in the Supabase SQL Editor after the projects migration, then
+-- fake_project_descriptions.sql to fill in their descriptions.
 -- To remove them later, run the delete at the bottom.
 
 insert into public.projects (name, location, latitude, longitude) values
