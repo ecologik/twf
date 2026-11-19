@@ -121,7 +121,11 @@ input {
   font: inherit; padding: 0.5rem 0.6rem; border-radius: 6px;
   border: 1px solid var(--border); background: var(--bg); color: var(--text);
 }
-input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+textarea {
+  font: inherit; padding: 0.5rem 0.6rem; border-radius: 6px; resize: vertical; min-height: 6rem; width: 100%;
+  border: 1px solid var(--border); background: var(--bg); color: var(--text); line-height: 1.55;
+}
+input:focus, textarea:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
 .divider { display: flex; align-items: center; gap: 0.75rem; margin: 1.25rem 0; color: var(--muted); font-size: 0.85rem; }
 .divider::before, .divider::after { content: ''; flex: 1; border-top: 1px solid var(--border); }
 .notice { color: var(--accent); }
@@ -143,7 +147,11 @@ table.list a { color: var(--text); text-decoration: none; }
 tr.clickable { cursor: pointer; }
 tr.clickable:hover { background: var(--bg); }
 .mono { font-variant-numeric: tabular-nums; }
-.project-form { max-width: 560px; }
+.project-form { max-width: 720px; }
+.field-head { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; margin-bottom: 0.25rem; }
+.field-head label { display: inline; font-weight: 600; }
+.field-head label .muted { font-weight: 400; margin-left: 0.4rem; }
+.field-help { margin: 0.3rem 0 0; }
 .coords { display: grid; grid-template-columns: 1fr 1fr auto; gap: 0.75rem; align-items: end; }
 button.icon-button { display: inline-flex; align-items: center; justify-content: center; padding: 0; width: 2.5rem; height: 2.5rem; font-size: 1.4rem; line-height: 1; }
 button.pin-button { color: var(--accent); }

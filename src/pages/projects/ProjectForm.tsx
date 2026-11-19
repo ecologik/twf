@@ -12,6 +12,11 @@ function parseCoord(s: string): number | null {
   return s.trim() === '' || !Number.isFinite(n) ? null : n
 }
 
+function wordCount(s: string): number {
+  const t = s.trim()
+  return t ? t.split(/\s+/).length : 0
+}
+
 export default function ProjectForm() {
   const { id } = useParams()
   const isNew = !id
@@ -20,6 +25,7 @@ export default function ProjectForm() {
   const [loaded, setLoaded] = useState(isNew)
   const [name, setName] = useState('')
   const [location, setLocation] = useState('')
+  const [description, setDescription] = useState('')
   const [lat, setLat] = useState('')
   const [lng, setLng] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -40,6 +46,7 @@ export default function ProjectForm() {
           const p = data as Project
           setName(p.name)
           setLocation(p.location ?? '')
+          setDescription(p.description ?? '')
           setLat(p.latitude?.toString() ?? '')
           setLng(p.longitude?.toString() ?? '')
         }
@@ -77,6 +84,7 @@ export default function ProjectForm() {
     const row = {
       name: name.trim(),
       location: location.trim() || null,
+      description: description.trim() || null,
       latitude: pin?.lat ?? null,
       longitude: pin?.lng ?? null,
     }
@@ -136,6 +144,24 @@ export default function ProjectForm() {
             >
               <PinIcon />
             </button>
+          </div>
+          <div className="field">
+            <div className="field-head">
+              <label htmlFor="project-description">
+                Description <span className="muted small">plain language, written once</span>
+              </label>
+              <span className="muted small">{wordCount(description)} {wordCount(description) === 1 ? 'word' : 'words'}</span>
+            </div>
+            <textarea
+              id="project-description"
+              rows={6}
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+            />
+            <p className="muted small field-help">
+              Used in the report package narrative and on the public project page, so it is worth writing for somebody
+              outside the office.
+            </p>
           </div>
           {error && <p className="error">{error}</p>}
           <div className="form-actions">
