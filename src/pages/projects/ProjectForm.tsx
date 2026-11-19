@@ -4,6 +4,8 @@ import { supabase } from '../../lib/supabase'
 import LocationDialog from '../../map/LocationDialog'
 import type { LatLng } from '../../map/MapPicker'
 import PinIcon from '../../map/PinIcon'
+import { pickDriveFolder, pickerConfigured } from '../../lib/googlePicker'
+import { useAuth } from '../../auth/context'
 import { driveFolderId, driveFolderUrl } from './drive'
 import MapTab from './MapTab'
 import type { FeatureCollection } from 'geojson'
@@ -34,6 +36,10 @@ export default function ProjectForm() {
   const [lng, setLng] = useState('')
   const [savedName, setSavedName] = useState('')
   const [driveLink, setDriveLink] = useState('')
+  const [driveName, setDriveName] = useState<string | null>(null)
+  const [browsing, setBrowsing] = useState(false)
+  const [driveError, setDriveError] = useState<string | null>(null)
+  const { profile } = useAuth()
   const [mapShapes, setMapShapes] = useState<FeatureCollection | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
@@ -74,6 +80,21 @@ export default function ProjectForm() {
     latN != null && lngN != null && Math.abs(latN) <= 90 && Math.abs(lngN) <= 180 ? { lat: latN, lng: lngN } : null
 
   const folderId = driveFolderId(driveLink)
+
+  async function browseDrive() {
+    setDriveError(null)
+    setBrowsing(true)
+    try {
+      const f = await pickDriveFolder(profile?.email)
+      if (f) {
+        setDriveLink(driveFolderUrl(f.id))
+        setDriveName(f.name)
+      }
+    } catch (e) {
+      setDriveError(e instanceof Error ? e.message : String(e))
+    }
+    setBrowsing(false)
+  }
 
   const onPick = useCallback((p: LatLng | null) => {
     setLat(p ? String(p.lat) : '')
@@ -165,18 +186,29 @@ export default function ProjectForm() {
             <section className="card drive-card">
               <h2 className="card-title">Google Drive folder</h2>
               <label>
-                <span className="muted small">Paste the link to this project's folder in Drive.</span>
+                <span className="muted small">
+                  {pickerConfigured ? 'Browse to the folder, or paste its link.' : "Paste the link to this project's folder in Drive."}
+                </span>
                 <input
                   value={driveLink}
-                  onChange={(e) => setDriveLink(e.target.value)}
+                  onChange={(e) => {
+                    setDriveLink(e.target.value)
+                    setDriveName(null)
+                  }}
                   placeholder="https://drive.google.com/drive/folders/…"
                   aria-invalid={!!driveLink.trim() && !folderId}
                 />
               </label>
+              {pickerConfigured && (
+                <button type="button" className="drive-browse" onClick={browseDrive} disabled={browsing}>
+                  {browsing ? 'Opening Drive…' : 'Browse Drive…'}
+                </button>
+              )}
+              {driveError && <p className="error small">{driveError}</p>}
               {driveLink.trim() && !folderId && <p className="error small">That doesn't look like a Drive folder link.</p>}
               {folderId && (
                 <a className="small" href={driveFolderUrl(folderId)} target="_blank" rel="noreferrer">
-                  Open in Drive ↗
+                  {driveName ? `Open “${driveName}” in Drive ↗` : 'Open in Drive ↗'}
                 </a>
               )}
             </section>

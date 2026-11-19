@@ -158,6 +158,7 @@ tr.clickable:hover { background: var(--bg); }
 .drive-card .card-title { margin: 0; }
 .drive-card p { margin: 0; }
 .drive-card input { width: 100%; }
+.drive-card .drive-browse { align-self: flex-start; }
 .cover-empty strong { color: var(--text); }
 .cover-empty p { margin: 0 0 0.5rem; }
 .cover-empty .form-actions { justify-content: center; }
