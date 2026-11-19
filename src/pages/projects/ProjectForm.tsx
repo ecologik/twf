@@ -8,6 +8,7 @@ import { pickDriveFolder, pickerConfigured } from '../../lib/googlePicker'
 import { useAuth } from '../../auth/context'
 import { driveFolderId, driveFolderUrl } from './drive'
 import MapTab from './MapTab'
+import LoadModelTab from './LoadModelTab'
 import type { FeatureCollection } from 'geojson'
 import ProjectTabs, { PROJECT_TABS, TabPlaceholder, type TabKey } from './ProjectTabs'
 import { PROJECT_COLUMNS, type Project } from './types'
@@ -41,6 +42,7 @@ export default function ProjectForm() {
   const [driveError, setDriveError] = useState<string | null>(null)
   const { profile } = useAuth()
   const [mapShapes, setMapShapes] = useState<FeatureCollection | null>(null)
+  const [loadCount, setLoadCount] = useState<number | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [picking, setPicking] = useState(false)
@@ -152,7 +154,7 @@ export default function ProjectForm() {
       <h1>{isNew ? 'New project' : name || 'Project'}</h1>
 
       {/* A new project gets the other tabs once it has been saved. */}
-      {!isNew && <ProjectTabs active={tab} onChange={setTab} counts={{ map: mapShapes?.features.length || undefined }} />}
+      {!isNew && <ProjectTabs active={tab} onChange={setTab} counts={{ map: mapShapes?.features.length || undefined, load: loadCount || undefined }} />}
 
       {tab === 'map' && id ? (
         <MapTab
@@ -162,6 +164,8 @@ export default function ProjectForm() {
           initial={mapShapes}
           onSaved={setMapShapes}
         />
+      ) : tab === 'load' && id ? (
+        <LoadModelTab projectId={id} onCount={setLoadCount} />
       ) : tab !== 'overview' ? (
         <TabPlaceholder tab={tab} />
       ) : (
