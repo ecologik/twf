@@ -147,7 +147,26 @@ table.list a { color: var(--text); text-decoration: none; }
 tr.clickable { cursor: pointer; }
 tr.clickable:hover { background: var(--bg); }
 .mono { font-variant-numeric: tabular-nums; }
-.project-form { max-width: 720px; }
+.project-overview { display: grid; grid-template-columns: minmax(240px, 320px) 1fr; gap: 1rem; align-items: start; }
+.project-overview .card { padding: 1rem 1.25rem; }
+.card-title { font-size: 1rem; margin: 0 0 0.75rem; }
+.cover-empty {
+  display: flex; flex-direction: column; align-items: center; text-align: center; gap: 0.35rem;
+  border: 1.5px dashed var(--border); border-radius: 8px; padding: 1.5rem 1rem; color: var(--muted); background: var(--bg);
+}
+.cover-empty strong { color: var(--text); }
+.cover-empty p { margin: 0 0 0.5rem; }
+.cover-empty .form-actions { justify-content: center; }
+.tabs { display: flex; gap: 0.25rem; border-bottom: 1px solid var(--border); margin-bottom: 1.25rem; overflow-x: auto; scrollbar-width: none; }
+.tabs::-webkit-scrollbar { display: none; }
+button.tab {
+  border: 0; border-bottom: 2px solid transparent; border-radius: 0; background: none; color: var(--muted);
+  padding: 0.6rem 0.8rem; white-space: nowrap; display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.95rem;
+}
+button.tab:hover { color: var(--text); }
+button.tab.active { color: var(--text); font-weight: 600; border-bottom-color: var(--accent); }
+.tab-count { font-size: 0.75rem; padding: 0 0.4rem; border-radius: 999px; background: var(--border); color: var(--muted); font-weight: 500; }
+.tab-placeholder { max-width: 720px; }
 .field-head { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; margin-bottom: 0.25rem; }
 .field-head label { display: inline; font-weight: 600; }
 .field-head label .muted { font-weight: 400; margin-left: 0.4rem; }
@@ -173,6 +192,8 @@ button.pin-button:hover { border-color: var(--accent); }
 button.danger { color: var(--danger); border-color: var(--danger); margin-left: auto; }
 @media (max-width: 760px) {
   .location-dialog-body { padding: 0.75rem; }
+  .project-overview { grid-template-columns: 1fr; }
+  .project-overview .cover-card { order: 2; }
   .map.overview { height: 260px; }
   table.list th:nth-child(3), table.list td:nth-child(3) { display: none; }
 }
