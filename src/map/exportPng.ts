@@ -1,13 +1,21 @@
 import L from 'leaflet'
+import { drawPin } from './pins'
 
-type Labelled = { layer: L.Layer; label: string }
+export type ExportShape = { layer: L.Layer; label: string; color: string }
+export type LegendEntry = { name: string; color: string }
 
 /**
  * Draws what the map shows right now (tiles, shapes, pins and labels) onto a
  * canvas and returns it as a PNG. Returning a Blob keeps this independent of
  * where the image ends up: a download today, the project's Drive folder later.
  */
-export async function mapToPng(map: L.Map, shapes: Labelled[], caption?: string, scale = 2): Promise<Blob> {
+export async function mapToPng(
+  map: L.Map,
+  shapes: ExportShape[],
+  caption?: string,
+  legend: LegendEntry[] = [],
+  scale = 2,
+): Promise<Blob> {
   const container = map.getContainer()
   const box = container.getBoundingClientRect()
   const { x: w, y: h } = map.getSize()
@@ -44,8 +52,9 @@ export async function mapToPng(map: L.Map, shapes: Labelled[], caption?: string,
     })
     if (close) ctx.closePath()
   }
-  for (const { layer } of shapes) {
-    if (!(layer instanceof L.Polyline)) continue
+  const inView = map.getBounds().pad(0.5)
+  for (const { layer, color } of shapes) {
+    if (!(layer instanceof L.Polyline) || !inView.intersects(layer.getBounds())) continue
     const o = layer.options
     const isArea = layer instanceof L.Polygon
     ctx.beginPath()
@@ -60,21 +69,23 @@ export async function mapToPng(map: L.Map, shapes: Labelled[], caption?: string,
     rings.forEach((r) => trace(r, isArea))
     if (isArea && o.fill !== false) {
       ctx.globalAlpha = o.fillOpacity ?? 0.2
-      ctx.fillStyle = o.fillColor ?? o.color ?? '#3388ff'
+      ctx.fillStyle = color
       ctx.fill('evenodd')
       ctx.globalAlpha = 1
     }
     ctx.lineWidth = o.weight ?? 3
-    ctx.strokeStyle = o.color ?? '#3388ff'
+    ctx.strokeStyle = color
     ctx.lineJoin = 'round'
     ctx.lineCap = 'round'
     ctx.stroke()
   }
 
-  // Pins: copy the marker images as they sit on the map.
-  for (const img of container.querySelectorAll<HTMLImageElement>('.leaflet-marker-pane img.leaflet-marker-icon')) {
-    const r = img.getBoundingClientRect()
-    ctx.drawImage(img, r.left - box.left, r.top - box.top, r.width, r.height)
+  // Points.
+  for (const { layer, color } of shapes) {
+    if (!(layer instanceof L.Marker)) continue
+    const p = pt(layer.getLatLng())
+    if (p.x < -20 || p.y < -30 || p.x > w + 20 || p.y > h + 30) continue
+    drawPin(ctx, p.x, p.y, color)
   }
 
   // Labels with a dark halo so they read on satellite and streets alike.
@@ -97,6 +108,27 @@ export async function mapToPng(map: L.Map, shapes: Labelled[], caption?: string,
     ctx.strokeText(label, p.x, p.y)
     ctx.fillStyle = '#fff'
     ctx.fillText(label, p.x, p.y)
+  }
+
+  // Legend (top right): one swatch per practice shown.
+  if (legend.length) {
+    ctx.font = '12px Inter, system-ui, sans-serif'
+    ctx.textAlign = 'left'
+    ctx.textBaseline = 'middle'
+    const row = 18
+    const bw = Math.max(...legend.map((l) => ctx.measureText(l.name).width)) + 36
+    const bh = legend.length * row + 12
+    const bx = w - bw - 10
+    const by = 10
+    ctx.fillStyle = 'rgba(255,255,255,0.9)'
+    ctx.fillRect(bx, by, bw, bh)
+    legend.forEach((l, i) => {
+      const y = by + 6 + row * i + row / 2
+      ctx.fillStyle = l.color
+      ctx.fillRect(bx + 8, y - 6, 14, 12)
+      ctx.fillStyle = '#222'
+      ctx.fillText(l.name, bx + 28, y)
+    })
   }
 
   // Caption (bottom left) and the map credits (bottom right), which the tile

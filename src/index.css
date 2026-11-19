@@ -179,13 +179,17 @@ button.tab.active { color: var(--text); font-weight: 600; border-bottom-color: v
 .shape-list { padding: 1rem; display: flex; flex-direction: column; gap: 0.6rem; }
 .shape-list .card-title { margin: 0; }
 .shape-list ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.4rem; }
-.shape-list li { display: grid; grid-template-columns: auto 1fr auto; gap: 0.4rem; align-items: center; }
-.shape-list li input { min-width: 0; padding: 0.35rem 0.5rem; font-size: 0.9rem; }
+.shape-list ul { gap: 0.75rem; }
+.shape-list li { display: grid; grid-template-columns: auto 1fr auto; gap: 0.35rem 0.4rem; align-items: center; }
+.shape-list li input, .shape-list li select { min-width: 0; padding: 0.35rem 0.5rem; font-size: 0.9rem; }
+.shape-list li .shape-label-input { grid-column: 1 / -1; }
+select {
+  font: inherit; padding: 0.45rem 0.5rem; border-radius: 6px;
+  border: 1px solid var(--border); background: var(--bg); color: var(--text);
+}
+.color-pin { background: none; border: 0; }
 .shape-list p { margin: 0; }
 button.shape-kind { font-size: 0.75rem; padding: 0.2rem 0.5rem; border-radius: 999px; font-weight: 600; width: 3.6rem; }
-button.shape-kind.area { border-color: #d9a520; color: #9a7310; }
-button.shape-kind.line { border-color: #2a9fd6; color: #1f7aa6; }
-button.shape-kind.point { border-color: var(--accent); color: var(--accent); }
 button.icon-button.small-x { width: 1.9rem; height: 1.9rem; border: 0; font-size: 1.2rem; color: var(--muted); }
 .leaflet-tooltip.shape-label {
   background: none; border: 0; box-shadow: none; padding: 0; font-weight: 600; font-size: 13px;
@@ -224,3 +228,16 @@ button.danger { color: var(--danger); border-color: var(--danger); margin-left: 
   .map.overview { height: 260px; }
   table.list th:nth-child(3), table.list td:nth-child(3) { display: none; }
 }
+
+/* Map section filter and practice types admin */
+label.check { flex-direction: row; align-items: center; gap: 0.5rem; cursor: pointer; }
+label.check input { margin: 0; }
+.practice-filter li { grid-template-columns: 1fr auto; }
+.practice-filter label.check { font-size: 0.9rem; }
+.practice-filter label.check .muted { margin-left: auto; }
+.swatch { width: 14px; height: 14px; border-radius: 3px; flex-shrink: 0; border: 1px solid rgba(0,0,0,0.15); }
+.practice-table td:first-child { width: 4.5rem; }
+.practice-table input[type="color"] { width: 2.75rem; height: 2.25rem; padding: 2px; cursor: pointer; }
+.practice-table td input:not([type]) { width: 100%; }
+.practice-table td.actions { display: table-cell; text-align: right; white-space: nowrap; width: 1%; }
+.practice-table td.actions button + button { margin-left: 0.5rem; }

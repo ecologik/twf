@@ -12,7 +12,7 @@ export type Section = {
 /** Sections in the grey second row, in order. A divider goes before `Board`. */
 export const SECTIONS: Section[] = [
   { path: '/projects', label: 'Projects', roles: ['admin'], blurb: 'Every practice from planning to close-out, with milestones, owners and site visits.' },
-  { path: '/map', label: 'Map', roles: ['admin'], blurb: 'Projects and practices on the watershed map.' },
+  { path: '/map', label: 'Map', roles: ['admin'], blurb: 'Every project\'s mapped practices on one map, filtered by practice type.' },
   { path: '/people', label: 'People', roles: ['admin'], blurb: 'Landowners, partners, contacts and the projects each one is on.' },
   { path: '/contractors', label: 'Contractors', roles: ['admin'], blurb: 'Companies, insurance expiry, invoicing and on-time record.' },
   { path: '/calculator', label: 'Calculator', roles: ['admin'], blurb: 'Load-reduction estimates for planned practices.' },
