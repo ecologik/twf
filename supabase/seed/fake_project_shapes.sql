@@ -1,0 +1,25 @@
+-- Made-up map shapes for the sample projects, tagged with practice types so
+-- the Map section has something to filter. Run in the Supabase SQL Editor after
+-- fake_projects.sql and the map_shapes and practice_types migrations.
+-- This replaces any shapes already drawn on these 8 sample projects.
+
+update public.projects as p set map_shapes = d.shapes::jsonb
+from (values
+  ('Syracuse inlet shoreline stabilization — Reach 2',
+   '{"type":"FeatureCollection","features":[{"type":"Feature","properties":{"label":"Toe-wood revetment","practice":"streambank"},"geometry":{"type":"LineString","coordinates":[[-85.753,41.426],[-85.7518,41.426535],[-85.7506,41.426485],[-85.7494,41.425905],[-85.7482,41.425429],[-85.747,41.425577]]}},{"type":"Feature","properties":{"label":"Photo point 1","practice":"other"},"geometry":{"type":"Point","coordinates":[-85.747,41.4283]}}]}'),
+  ('Tippecanoe Lake headwater wetland restoration',
+   '{"type":"FeatureCollection","features":[{"type":"Feature","properties":{"label":"Wetland pools","practice":"wetland"},"geometry":{"type":"Polygon","coordinates":[[[-85.735655,41.3275],[-85.736246,41.328228],[-85.737356,41.3287],[-85.738035,41.327883],[-85.73836,41.326996],[-85.737306,41.326467],[-85.736291,41.326816],[-85.735655,41.3275]]]}},{"type":"Feature","properties":{"label":"Upland filter strip","practice":"filter-strip"},"geometry":{"type":"Polygon","coordinates":[[[-85.733,41.3275],[-85.73,41.3279],[-85.73,41.3282],[-85.733,41.3278],[-85.733,41.3275]]]}}]}'),
+  ('Grassy Creek two-stage ditch — CR 500N',
+   '{"type":"FeatureCollection","features":[{"type":"Feature","properties":{"label":"Benched reach","practice":"two-stage-ditch"},"geometry":{"type":"LineString","coordinates":[[-85.803,41.3135],[-85.8018,41.314035],[-85.8006,41.313985],[-85.7994,41.313405],[-85.7982,41.312929],[-85.797,41.313077]]}},{"type":"Feature","properties":{"label":"Outlet waterway","practice":"grassed-waterway"},"geometry":{"type":"Polygon","coordinates":[[[-85.796,41.3135],[-85.793,41.3139],[-85.793,41.3142],[-85.796,41.3138],[-85.796,41.3135]]]}}]}'),
+  ('Webster Lake riparian buffer — Hollis farm',
+   '{"type":"FeatureCollection","features":[{"type":"Feature","properties":{"label":"50 ft buffer","practice":"riparian-buffer"},"geometry":{"type":"Polygon","coordinates":[[[-85.682,41.3105],[-85.679,41.3109],[-85.679,41.3112],[-85.682,41.3108],[-85.682,41.3105]]]}},{"type":"Feature","properties":{"label":"Hollis north field","practice":"cover-crop"},"geometry":{"type":"Polygon","coordinates":[[[-85.678,41.3105],[-85.6745,41.3105],[-85.6745,41.3127],[-85.678,41.3127],[-85.678,41.3105]]]}}]}'),
+  ('Barbee Chain invasive control — bush honeysuckle',
+   '{"type":"FeatureCollection","features":[{"type":"Feature","properties":{"label":"Honeysuckle removal","practice":"invasive-control"},"geometry":{"type":"Polygon","coordinates":[[[-85.715512,41.2945],[-85.716301,41.295174],[-85.717318,41.295573],[-85.718033,41.294883],[-85.718048,41.294112],[-85.717317,41.293433],[-85.715917,41.293455],[-85.715512,41.2945]]]}}]}'),
+  ('Beaver Dam no-till & cover crop cohort A',
+   '{"type":"FeatureCollection","features":[{"type":"Feature","properties":{"label":"Field A1","practice":"cover-crop"},"geometry":{"type":"Polygon","coordinates":[[[-85.897,41.0865],[-85.8935,41.0865],[-85.8935,41.0887],[-85.897,41.0887],[-85.897,41.0865]]]}},{"type":"Feature","properties":{"label":"Field A2","practice":"cover-crop"},"geometry":{"type":"Polygon","coordinates":[[[-85.893,41.0865],[-85.8895,41.0865],[-85.8895,41.0887],[-85.893,41.0887],[-85.893,41.0865]]]}},{"type":"Feature","properties":{"label":"Field A3","practice":"no-till"},"geometry":{"type":"Polygon","coordinates":[[[-85.897,41.0895],[-85.8935,41.0895],[-85.8935,41.0917],[-85.897,41.0917],[-85.897,41.0895]]]}},{"type":"Feature","properties":{"label":"Waterway A1","practice":"grassed-waterway"},"geometry":{"type":"Polygon","coordinates":[[[-85.893,41.0895],[-85.89,41.0899],[-85.89,41.0902],[-85.893,41.0898],[-85.893,41.0895]]]}}]}'),
+  ('Little Tippecanoe wetland restoration — Cell 1',
+   '{"type":"FeatureCollection","features":[{"type":"Feature","properties":{"label":"Cell 1","practice":"wetland"},"geometry":{"type":"Polygon","coordinates":[[[-85.850811,41.3305],[-85.851211,41.331261],[-85.852352,41.331686],[-85.85365,41.331111],[-85.853389,41.329985],[-85.852312,41.329449],[-85.850844,41.329385],[-85.850811,41.3305]]]}}]}'),
+  ('Grassy Creek bank stabilization — Reach 1',
+   '{"type":"FeatureCollection","features":[{"type":"Feature","properties":{"label":"Bend 1\u20133","practice":"streambank"},"geometry":{"type":"LineString","coordinates":[[-85.817,41.2995],[-85.8158,41.300035],[-85.8146,41.299985],[-85.8134,41.299405],[-85.8122,41.298929],[-85.811,41.299077]]}},{"type":"Feature","properties":{"label":"Adjacent field","practice":"cover-crop"},"geometry":{"type":"Polygon","coordinates":[[[-85.81,41.2995],[-85.8065,41.2995],[-85.8065,41.3017],[-85.81,41.3017],[-85.81,41.2995]]]}}]}')
+) as d(name, shapes)
+where p.name = d.name;

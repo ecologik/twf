@@ -15,6 +15,8 @@ import SectionPlaceholder from './pages/SectionPlaceholder'
 // The map library is big, so the Projects pages load only when opened.
 const ProjectList = lazy(() => import('./pages/projects/ProjectList'))
 const ProjectForm = lazy(() => import('./pages/projects/ProjectForm'))
+const AllProjectsMap = lazy(() => import('./pages/map/AllProjectsMap'))
+const PracticeTypes = lazy(() => import('./pages/admin/PracticeTypes'))
 import { SECTIONS } from './nav/sections'
 
 function Nav() {
@@ -32,6 +34,7 @@ function Nav() {
             <nav className="topnav-links">
               {isAdmin && <NavLink to="/" end>Home</NavLink>}
               {isAdmin && <NavLink to="/admin/users">Users</NavLink>}
+              {isAdmin && <NavLink to="/admin/practices">Practices</NavLink>}
             </nav>
             <div className="topnav-user">
               <span className="topnav-email">{profile.email}</span>
@@ -80,7 +83,8 @@ function App() {
               <Route path="/projects" element={<RequireRole allow={['admin']}><ProjectList /></RequireRole>} />
               <Route path="/projects/new" element={<RequireRole allow={['admin']}><ProjectForm /></RequireRole>} />
               <Route path="/projects/:id" element={<RequireRole allow={['admin']}><ProjectForm /></RequireRole>} />
-              {SECTIONS.filter((s) => s.path !== '/projects').map((s) => (
+              <Route path="/map" element={<RequireRole allow={['admin']}><AllProjectsMap /></RequireRole>} />
+              {SECTIONS.filter((s) => s.path !== '/projects' && s.path !== '/map').map((s) => (
                 <Route
                   key={s.path}
                   path={s.path}
@@ -88,6 +92,7 @@ function App() {
                 />
               ))}
               <Route path="/admin/users" element={<RequireRole allow={['admin']}><Users /></RequireRole>} />
+              <Route path="/admin/practices" element={<RequireRole allow={['admin']}><PracticeTypes /></RequireRole>} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </Suspense>
