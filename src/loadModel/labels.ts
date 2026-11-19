@@ -55,3 +55,24 @@ export function fmt(n: number | null | undefined): string {
 
 /** Load figures: at most one decimal, like the prototype. */
 export const fmt1 = (n: number) => n.toLocaleString('en-US', { maximumFractionDigits: 1 })
+
+/**
+ * Suggests one of the map's practice types (ids from the practice_types
+ * table) for an entry, from its Region 5 practice and workbook tab. Returns
+ * null when nothing clearly fits; staff can always pick one.
+ */
+export function suggestPracticeType(kind: SheetKind, practice: string | null, ids: Set<string>): string | null {
+  const p = (practice ?? '').toLowerCase()
+  const rules: [boolean, string][] = [
+    [p.includes('cover crop'), 'cover-crop'],
+    [p.includes('no till') || p.includes('reduced till'), 'no-till'],
+    [p.includes('grassed waterway'), 'grassed-waterway'],
+    [p.includes('filter strip'), 'filter-strip'],
+    [p.includes('riparian'), 'riparian-buffer'],
+    [p.includes('wetland'), 'wetland'],
+    [p.includes('streambank') || kind === 'bank', 'streambank'],
+    [kind === 'feedlot', 'feedlot'],
+  ]
+  for (const [hit, id] of rules) if (hit && ids.has(id)) return id
+  return null
+}
