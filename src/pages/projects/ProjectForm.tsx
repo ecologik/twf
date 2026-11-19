@@ -4,6 +4,8 @@ import { supabase } from '../../lib/supabase'
 import LocationDialog from '../../map/LocationDialog'
 import type { LatLng } from '../../map/MapPicker'
 import PinIcon from '../../map/PinIcon'
+import MapTab from './MapTab'
+import type { FeatureCollection } from 'geojson'
 import ProjectTabs, { PROJECT_TABS, TabPlaceholder, type TabKey } from './ProjectTabs'
 import { PROJECT_COLUMNS, type Project } from './types'
 
@@ -29,6 +31,8 @@ export default function ProjectForm() {
   const [description, setDescription] = useState('')
   const [lat, setLat] = useState('')
   const [lng, setLng] = useState('')
+  const [savedName, setSavedName] = useState('')
+  const [mapShapes, setMapShapes] = useState<FeatureCollection | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [picking, setPicking] = useState(false)
@@ -50,6 +54,8 @@ export default function ProjectForm() {
         else {
           const p = data as Project
           setName(p.name)
+          setSavedName(p.name)
+          setMapShapes(p.map_shapes)
           setLocation(p.location ?? '')
           setDescription(p.description ?? '')
           setLat(p.latitude?.toString() ?? '')
@@ -118,9 +124,17 @@ export default function ProjectForm() {
       <h1>{isNew ? 'New project' : name || 'Project'}</h1>
 
       {/* A new project gets the other tabs once it has been saved. */}
-      {!isNew && <ProjectTabs active={tab} onChange={setTab} />}
+      {!isNew && <ProjectTabs active={tab} onChange={setTab} counts={{ map: mapShapes?.features.length || undefined }} />}
 
-      {tab !== 'overview' ? (
+      {tab === 'map' && id ? (
+        <MapTab
+          projectId={id}
+          projectName={savedName || name}
+          center={pin ? [pin.lat, pin.lng] : null}
+          initial={mapShapes}
+          onSaved={setMapShapes}
+        />
+      ) : tab !== 'overview' ? (
         <TabPlaceholder tab={tab} />
       ) : (
         <form className="project-overview" onSubmit={save}>

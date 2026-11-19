@@ -31,4 +31,4 @@ Client-side routes rely on `public/.htaccess` (SPA rewrite). Don't remove it. It
 - Setup steps (Google Cloud, Supabase, SendGrid): `docs/auth-setup.md`.
 
 ## Maps
-Leaflet via react-leaflet (`src/map/`), no API key: OpenStreetMap streets plus Esri World Imagery satellite. The Projects pages are lazy-loaded so the map library stays out of the main bundle. Fake sample projects live in `supabase/seed/fake_projects.sql` (run by hand, never a migration).
+Leaflet via react-leaflet (`src/map/`), no API key: OpenStreetMap streets plus Esri World Imagery satellite. The Projects pages are lazy-loaded so the map library stays out of the main bundle. A project's Map tab draws shapes with Leaflet-Geoman and stores them as GeoJSON in `projects.map_shapes`; `src/map/exportPng.ts` turns the current view into a PNG Blob (tiles load with `crossOrigin` so the canvas can be exported). Fake sample projects live in `supabase/seed/fake_projects.sql` (run by hand, never a migration).
