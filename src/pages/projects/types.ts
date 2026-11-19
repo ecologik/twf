@@ -9,8 +9,10 @@ export type Project = {
   longitude: number | null
   /** Shapes from the Map tab, as GeoJSON. */
   map_shapes: FeatureCollection | null
+  /** Google Drive folder for the project's files. */
+  drive_folder_id: string | null
   created_at: string
   updated_at: string
 }
 
-export const PROJECT_COLUMNS = 'id, name, location, description, latitude, longitude, map_shapes, created_at, updated_at'
+export const PROJECT_COLUMNS = 'id, name, location, description, latitude, longitude, map_shapes, drive_folder_id, created_at, updated_at'

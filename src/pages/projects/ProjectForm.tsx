@@ -4,6 +4,7 @@ import { supabase } from '../../lib/supabase'
 import LocationDialog from '../../map/LocationDialog'
 import type { LatLng } from '../../map/MapPicker'
 import PinIcon from '../../map/PinIcon'
+import { driveFolderId, driveFolderUrl } from './drive'
 import MapTab from './MapTab'
 import type { FeatureCollection } from 'geojson'
 import ProjectTabs, { PROJECT_TABS, TabPlaceholder, type TabKey } from './ProjectTabs'
@@ -32,6 +33,7 @@ export default function ProjectForm() {
   const [lat, setLat] = useState('')
   const [lng, setLng] = useState('')
   const [savedName, setSavedName] = useState('')
+  const [driveLink, setDriveLink] = useState('')
   const [mapShapes, setMapShapes] = useState<FeatureCollection | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
@@ -56,6 +58,7 @@ export default function ProjectForm() {
           setName(p.name)
           setSavedName(p.name)
           setMapShapes(p.map_shapes)
+          setDriveLink(p.drive_folder_id ? driveFolderUrl(p.drive_folder_id) : '')
           setLocation(p.location ?? '')
           setDescription(p.description ?? '')
           setLat(p.latitude?.toString() ?? '')
@@ -69,6 +72,8 @@ export default function ProjectForm() {
   const lngN = parseCoord(lng)
   const pin: LatLng | null =
     latN != null && lngN != null && Math.abs(latN) <= 90 && Math.abs(lngN) <= 180 ? { lat: latN, lng: lngN } : null
+
+  const folderId = driveFolderId(driveLink)
 
   const onPick = useCallback((p: LatLng | null) => {
     setLat(p ? String(p.lat) : '')
@@ -90,12 +95,14 @@ export default function ProjectForm() {
     setError(null)
     if (!name.trim()) return setError('Give the project a name.')
     if ((lat.trim() || lng.trim()) && !pin) return setError('Latitude and longitude need to be numbers, or both left empty.')
+    if (driveLink.trim() && !folderId) return setError("That doesn't look like a Google Drive folder link.")
 
     setBusy(true)
     const row = {
       name: name.trim(),
       location: location.trim() || null,
       description: description.trim() || null,
+      drive_folder_id: folderId,
       latitude: pin?.lat ?? null,
       longitude: pin?.lng ?? null,
     }
@@ -138,22 +145,42 @@ export default function ProjectForm() {
         <TabPlaceholder tab={tab} />
       ) : (
         <form className="project-overview" onSubmit={save}>
-          <section className="card cover-card">
-            <h2 className="card-title">Cover image</h2>
-            <div className="cover-empty">
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <rect x="3" y="4" width="18" height="16" rx="2" />
-                <circle cx="9" cy="10" r="2" />
-                <path d="m21 16-5-5-9 9" />
-              </svg>
-              <strong>No cover yet</strong>
-              <p className="muted small">Pick an image from this project's Drive folder, or upload a new one. Coming soon.</p>
-              <div className="form-actions">
-                <button type="button" className="primary" disabled>Choose from Drive</button>
-                <button type="button" disabled>Upload</button>
+          <div className="stack">
+            <section className="card cover-card">
+              <h2 className="card-title">Cover image</h2>
+              <div className="cover-empty">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <rect x="3" y="4" width="18" height="16" rx="2" />
+                  <circle cx="9" cy="10" r="2" />
+                  <path d="m21 16-5-5-9 9" />
+                </svg>
+                <strong>No cover yet</strong>
+                <p className="muted small">Pick an image from this project's Drive folder, or upload a new one. Coming soon.</p>
+                <div className="form-actions">
+                  <button type="button" className="primary" disabled>Choose from Drive</button>
+                  <button type="button" disabled>Upload</button>
+                </div>
               </div>
-            </div>
-          </section>
+            </section>
+            <section className="card drive-card">
+              <h2 className="card-title">Google Drive folder</h2>
+              <label>
+                <span className="muted small">Paste the link to this project's folder in Drive.</span>
+                <input
+                  value={driveLink}
+                  onChange={(e) => setDriveLink(e.target.value)}
+                  placeholder="https://drive.google.com/drive/folders/…"
+                  aria-invalid={!!driveLink.trim() && !folderId}
+                />
+              </label>
+              {driveLink.trim() && !folderId && <p className="error small">That doesn't look like a Drive folder link.</p>}
+              {folderId && (
+                <a className="small" href={driveFolderUrl(folderId)} target="_blank" rel="noreferrer">
+                  Open in Drive ↗
+                </a>
+              )}
+            </section>
+          </div>
 
           <div className="stack">
             <section className="card stack">
