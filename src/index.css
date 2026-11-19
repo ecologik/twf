@@ -154,6 +154,10 @@ tr.clickable:hover { background: var(--bg); }
   display: flex; flex-direction: column; align-items: center; text-align: center; gap: 0.35rem;
   border: 1.5px dashed var(--border); border-radius: 8px; padding: 1.5rem 1rem; color: var(--muted); background: var(--bg);
 }
+.drive-card { display: flex; flex-direction: column; gap: 0.5rem; }
+.drive-card .card-title { margin: 0; }
+.drive-card p { margin: 0; }
+.drive-card input { width: 100%; }
 .cover-empty strong { color: var(--text); }
 .cover-empty p { margin: 0 0 0.5rem; }
 .cover-empty .form-actions { justify-content: center; }
@@ -213,7 +217,7 @@ button.danger { color: var(--danger); border-color: var(--danger); margin-left: 
 @media (max-width: 760px) {
   .location-dialog-body { padding: 0.75rem; }
   .project-overview { grid-template-columns: 1fr; }
-  .project-overview .cover-card { order: 2; }
+  .project-overview > .stack:first-child { order: 2; }
   .map-tab { grid-template-columns: 1fr; }
   .map.drawing { height: 60vh; }
   .map.overview { height: 260px; }
