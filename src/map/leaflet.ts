@@ -10,11 +10,13 @@ L.Marker.prototype.options.icon = L.icon({
   iconUrl,
   iconRetinaUrl,
   shadowUrl,
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  tooltipAnchor: [16, -28],
-  shadowSize: [41, 41],
+  // Half Leaflet's default size, so nearby projects don't hide each other.
+  iconSize: [13, 21],
+  iconAnchor: [6, 21],
+  popupAnchor: [1, -18],
+  tooltipAnchor: [8, -14],
+  shadowSize: [21, 21],
+  shadowAnchor: [6, 21],
 })
 
 /** Where a new map opens: TWF's lakes in Kosciusko County, Indiana. */
