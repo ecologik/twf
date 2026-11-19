@@ -6,7 +6,7 @@ import { MapContainer, useMap } from 'react-leaflet'
 import { supabase } from '../../lib/supabase'
 import { UNSET_COLOR, usePracticeTypes } from '../../lib/practices'
 import BaseLayers from '../../map/BaseLayers'
-import { downloadBlob, mapToPng } from '../../map/exportPng'
+import { downloadBlob, mapToPng, type ExportShape } from '../../map/exportPng'
 import { DEFAULT_CENTER, DEFAULT_ZOOM, PIN_ICON } from '../../map/leaflet'
 import { colorPin, styleFor } from '../../map/pins'
 
@@ -30,14 +30,14 @@ function Layers({
   pins: Row[]
   colorOf: (p: string | null) => string
   nameOf: (p: string | null) => string
-  onLayers: (l: { layer: L.Layer; color: string; label: string }[]) => void
+  onLayers: (l: ExportShape[]) => void
 }) {
   const map = useMap()
   const fitted = useRef(false)
 
   useEffect(() => {
     const group = L.featureGroup().addTo(map)
-    const drawn: { layer: L.Layer; color: string; label: string }[] = []
+    const drawn: ExportShape[] = []
 
     for (const it of items) {
       const color = colorOf(it.practice)
@@ -51,7 +51,13 @@ function Layers({
               `<a href="/projects/${it.project.id}?tab=map">Open project map</a>`,
           )
           group.addLayer(layer)
-          drawn.push({ layer, color, label: '' })
+          drawn.push({
+            layer,
+            color,
+            number: drawn.length + 1,
+            name: it.project.name,
+            practice: nameOf(it.practice),
+          })
         },
       })
     }
@@ -87,7 +93,7 @@ export default function AllProjectsMap() {
   const [showPins, setShowPins] = useState(false)
   const [map, setMap] = useState<L.Map | null>(null)
   const [busy, setBusy] = useState(false)
-  const drawnRef = useRef<{ layer: L.Layer; color: string; label: string }[]>([])
+  const drawnRef = useRef<ExportShape[]>([])
 
   useEffect(() => {
     supabase
@@ -154,11 +160,21 @@ export default function AllProjectsMap() {
     if (!map) return
     setBusy(true)
     try {
-      const shown = new Set(visible.map((it) => keyOf(it.practice)))
-      const legend = choices.filter((c) => shown.has(c.key)).map((c) => ({ name: c.name, color: c.color }))
       const caption =
         selected && selected.size === 1 ? `${choices.find((c) => selected.has(c.key))?.name} · all projects` : 'All projects'
-      const blob = await mapToPng(map, drawnRef.current, caption, legend)
+      // One number per project, counting only what's in the picture, so the
+      // key reads 1, 2, 3… with each project's practices beside its name.
+      const view = map.getBounds()
+      const inView = drawnRef.current
+        .filter(({ layer }) =>
+          layer instanceof L.Marker
+            ? view.contains(layer.getLatLng())
+            : layer instanceof L.Polyline && view.intersects(layer.getBounds()),
+        )
+      const numbers = new Map<string, number>()
+      for (const s of inView) if (!numbers.has(s.name)) numbers.set(s.name, numbers.size + 1)
+      const numbered = inView.map((s) => ({ ...s, number: numbers.get(s.name)! }))
+      const blob = await mapToPng(map, numbered, caption)
       downloadBlob(blob, `twf-map-${caption.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}.png`)
     } catch (e) {
       setError(`Couldn't make the image (${e instanceof Error ? e.message : e}).`)

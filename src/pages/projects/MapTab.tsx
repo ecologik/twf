@@ -237,14 +237,15 @@ export default function MapTab({
     setBusy('png')
     setMessage(null)
     try {
-      const exportShapes = shapes.map((s) => ({
+      const nameOf = new Map(types.map((t) => [t.id, t.name]))
+      const exportShapes = shapes.map((s, i) => ({
         layer: layers.current.get(s.id)!,
-        label: s.label.trim(),
         color: colorOf(s.practice),
+        number: i + 1,
+        name: s.label.trim(),
+        practice: (s.practice && nameOf.get(s.practice)) || 'No practice set',
       }))
-      const used = new Set(shapes.map((s) => s.practice))
-      const legend = types.filter((t) => used.has(t.id)).map((t) => ({ name: t.name, color: t.color }))
-      const blob = await mapToPng(map, exportShapes, projectName, legend)
+      const blob = await mapToPng(map, exportShapes, projectName)
       const slug = projectName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'project'
       downloadBlob(blob, `${slug}-map.png`)
     } catch (e) {
@@ -290,7 +291,7 @@ export default function MapTab({
           <p className="muted small">Nothing drawn yet.</p>
         ) : (
           <ul>
-            {shapes.map((s) => (
+            {shapes.map((s, i) => (
               <li key={s.id}>
                 <button
                   type="button"
@@ -299,7 +300,7 @@ export default function MapTab({
                   onClick={() => zoomTo(s.id)}
                   title="Zoom to it"
                 >
-                  {KIND_LABEL[s.kind]}
+                  {i + 1} · {KIND_LABEL[s.kind]}
                 </button>
                 <select
                   value={s.practice ?? ''}
