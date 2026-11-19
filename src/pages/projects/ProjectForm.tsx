@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
-import MapPicker, { type LatLng } from '../../map/MapPicker'
+import LocationDialog from '../../map/LocationDialog'
+import type { LatLng } from '../../map/MapPicker'
+import PinIcon from '../../map/PinIcon'
 import { PROJECT_COLUMNS, type Project } from './types'
 
 /** A number from a text box, or null if it is empty or not a number. */
@@ -22,6 +24,7 @@ export default function ProjectForm() {
   const [lng, setLng] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+  const [picking, setPicking] = useState(false)
 
   useEffect(() => {
     if (isNew) return
@@ -49,9 +52,10 @@ export default function ProjectForm() {
   const pin: LatLng | null =
     latN != null && lngN != null && Math.abs(latN) <= 90 && Math.abs(lngN) <= 180 ? { lat: latN, lng: lngN } : null
 
-  const onPick = useCallback((p: LatLng) => {
-    setLat(String(p.lat))
-    setLng(String(p.lng))
+  const onPick = useCallback((p: LatLng | null) => {
+    setLat(p ? String(p.lat) : '')
+    setLng(p ? String(p.lng) : '')
+    setPicking(false)
   }, [])
 
   function onLatChange(v: string) {
@@ -123,12 +127,16 @@ export default function ProjectForm() {
               Longitude
               <input value={lng} onChange={(e) => setLng(e.target.value)} inputMode="decimal" placeholder="-85.78" />
             </label>
-          </div>
-          {pin && (
-            <button type="button" className="link small" onClick={() => { setLat(''); setLng('') }}>
-              Remove pin
+            <button
+              type="button"
+              className="icon-button pin-button"
+              onClick={() => setPicking(true)}
+              title="Pick the location on a map"
+              aria-label="Pick the location on a map"
+            >
+              <PinIcon />
             </button>
-          )}
+          </div>
           {error && <p className="error">{error}</p>}
           <div className="form-actions">
             <button type="submit" className="primary" disabled={busy}>{isNew ? 'Add project' : 'Save'}</button>
@@ -136,14 +144,16 @@ export default function ProjectForm() {
             {!isNew && <button type="button" className="danger" onClick={remove} disabled={busy}>Delete</button>}
           </div>
         </div>
-
-        <div>
-          <MapPicker value={pin} onChange={onPick} />
-          <p className="muted small">
-            Click the map to drop the pin, then drag it to fine-tune. The button in the corner switches between satellite and streets.
-          </p>
-        </div>
       </form>
+
+      {picking && (
+        <LocationDialog
+          value={pin}
+          title={name.trim() ? `Location of ${name.trim()}` : 'Project location'}
+          onClose={() => setPicking(false)}
+          onSave={onPick}
+        />
+      )}
     </>
   )
 }

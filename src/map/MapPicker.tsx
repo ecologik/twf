@@ -18,6 +18,22 @@ function ClickToPlace({ onPick }: { onPick: (p: LatLng) => void }) {
   return null
 }
 
+/**
+ * Re-measures the map whenever its box changes size. Leaflet only measures
+ * once, so a map that mounts inside a pop-up that's still opening would
+ * otherwise draw only a corner of its tiles.
+ */
+function KeepSized() {
+  const map = useMap()
+  useEffect(() => {
+    const el = map.getContainer()
+    const ro = new ResizeObserver(() => map.invalidateSize())
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [map])
+  return null
+}
+
 /** Pans to the pin when it is set from outside the map (typed coordinates). */
 function FollowPin({ value }: { value: LatLng | null }) {
   const map = useMap()
@@ -56,6 +72,7 @@ export default function MapPicker({ value, onChange }: { value: LatLng | null; o
       scrollWheelZoom
     >
       <BaseLayers satellite />
+      <KeepSized />
       <ClickToPlace onPick={onChange} />
       <FollowPin value={value} />
       {value && <Marker position={[value.lat, value.lng]} draggable eventHandlers={handlers} ref={markerRef} />}
