@@ -29,6 +29,7 @@ Client-side routes rely on `public/.htaccess` (SPA rewrite). Don't remove it. It
 - Nothing happens until the email is confirmed (Google sign-ins arrive confirmed). Then emails in `signup_approvers` become admin, and anyone else triggers a SendGrid email from the `notify-signup` Edge Function to approvers with `receives_emails`. Supabase Auth's own emails go through SendGrid SMTP. Deploy `notify-signup` with `--no-verify-jwt` (the database trigger calls it).
 - Roles are enforced in RLS. Every new table's policies use `public.is_admin()` or `public.is_board_or_admin()`, never a bare `to authenticated` (pending users are authenticated). Frontend `RequireRole` is only for the UI.
 - Setup steps (Google Cloud, Supabase, SendGrid): `docs/auth-setup.md`.
+- Drive folder picker (optional `VITE_GOOGLE_*` vars, `drive.file` scope only): `docs/drive-picker-setup.md`.
 
 ## Maps
 Leaflet via react-leaflet (`src/map/`), no API key: OpenStreetMap streets plus Esri World Imagery satellite. The Projects pages are lazy-loaded so the map library stays out of the main bundle. A project's Map tab draws shapes with Leaflet-Geoman and stores them as GeoJSON in `projects.map_shapes`; `src/map/exportPng.ts` turns the current view into a PNG Blob (tiles load with `crossOrigin` so the canvas can be exported). Fake sample projects live in `supabase/seed/fake_projects.sql` (run by hand, never a migration).
