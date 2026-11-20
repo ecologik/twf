@@ -206,6 +206,19 @@ button.icon-button.small-x { width: 1.9rem; height: 1.9rem; border: 0; font-size
 .list-filters { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 0.75rem; }
 select.huc-filter { max-width: 100%; }
 .practice-filter select.huc-filter { width: 100%; font-size: 0.9rem; }
+.pill-row { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 1rem; }
+button.pill {
+  display: inline-flex; align-items: center; gap: 0.4rem; border-radius: 999px; padding: 0.3rem 0.75rem;
+  font-size: 0.85rem; background: var(--surface); color: var(--text);
+}
+button.pill.on { border-color: var(--accent); background: var(--accent); color: #fff; }
+button.pill.on .swatch { border-color: rgba(255,255,255,0.7); }
+.pill-count { font-size: 0.75rem; opacity: 0.7; }
+button.map-toggle { display: inline-flex; align-items: center; gap: 0.4rem; }
+button.map-toggle.active { border-color: var(--accent); color: var(--accent); }
+.type-tags { display: flex; flex-wrap: wrap; gap: 0.25rem 0.6rem; }
+.type-tag { display: inline-flex; align-items: center; gap: 0.3rem; font-size: 0.85rem; white-space: nowrap; }
+.type-tag .swatch { width: 10px; height: 10px; }
 .huc-line { display: flex; flex-direction: column; gap: 0.15rem; }
 .field-head { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; margin-bottom: 0.25rem; }
 .field-head label { display: inline; font-weight: 600; }
@@ -237,7 +250,7 @@ button.danger { color: var(--danger); border-color: var(--danger); margin-left: 
   .map-tab { grid-template-columns: 1fr; }
   .map.drawing { height: 60vh; }
   .map.overview { height: 260px; }
-  table.projects-table th:nth-child(4), table.projects-table td:nth-child(4) { display: none; }
+  table.projects-table th:nth-child(3), table.projects-table td:nth-child(3) { display: none; }
 }
 
 /* Map section filter and practice types admin */
