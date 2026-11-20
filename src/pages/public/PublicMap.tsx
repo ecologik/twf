@@ -29,6 +29,20 @@ export type PublicProject = {
 const PIN = colorPin('#0e3853') // TWF navy
 const PIN_SELECTED = colorPin('#8ac641') // TWF green
 
+/** Width of the drawer in px (keep in step with .public-drawer in index.css). */
+const DRAWER_WIDTH = 420
+/** Longest description shown on a card before it is cut with an ellipsis. */
+const CARD_DESCRIPTION_CHARS = 160
+
+/** Cuts text at a word boundary to at most `max` characters, adding an ellipsis. */
+function clip(text: string, max: number): string {
+  const t = text.replace(/\s+/g, ' ').trim()
+  if (t.length <= max) return t
+  const cut = t.slice(0, max - 1)
+  const space = cut.lastIndexOf(' ')
+  return `${(space > max * 0.6 ? cut.slice(0, space) : cut).replace(/[\s.,;:–-]+$/, '')}…`
+}
+
 const fmt1 = (n: number) => n.toLocaleString('en-US', { maximumFractionDigits: 1 })
 
 /**
@@ -47,12 +61,15 @@ function MapBehaviour({
   const map = useMap()
   useEffect(() => {
     if (!selected) return
-    const size = map.getSize()
-    const phone = size.x <= 640
-    // The drawer is 380px wide on the right, or a sheet over the bottom 75% on a phone.
+    // The drawer covers the browser's right edge; keep the pin in the part of
+    // the map it doesn't cover (if any of the map is left uncovered).
+    const box = map.getContainer().getBoundingClientRect()
+    const drawerLeft = window.innerWidth - Math.min(DRAWER_WIDTH, window.innerWidth)
+    const covered = Math.max(0, box.right - drawerLeft)
+    if (covered > box.width - 120) return
     map.panInside([selected.latitude, selected.longitude], {
       paddingTopLeft: [40, 40],
-      paddingBottomRight: phone ? [40, size.y * 0.75 + 30] : [Math.min(380, size.x) + 40, 40],
+      paddingBottomRight: [covered + 40, 40],
     })
   }, [map, selected])
   const fitted = useRef(false)
@@ -66,10 +83,49 @@ function MapBehaviour({
   return null
 }
 
+/** Stand-in for the project's cover photo until covers come from its Drive folder. */
+function Photo({ project, className }: { project: PublicProject; className: string }) {
+  const tint = project.practices[0]?.color ?? '#56724a'
+  return (
+    <div className={`public-photo ${className}`} style={{ ['--tint' as string]: tint }} aria-hidden="true">
+      <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z" />
+      </svg>
+    </div>
+  )
+}
+
+function Card({ project, active, onOpen }: { project: PublicProject; active: boolean; onOpen: () => void }) {
+  return (
+    <li>
+      <button type="button" className={`public-card${active ? ' active' : ''}`} onClick={onOpen} aria-haspopup="dialog">
+        <Photo project={project} className="public-card-photo" />
+        <div className="public-card-body">
+          <h2>{project.name}</h2>
+          {project.practices.length > 0 && (
+            <div className="type-tags">
+              {project.practices.map((p) => (
+                <span key={p.name} className="type-tag">
+                  <span className="swatch" style={{ background: p.color }} />
+                  {p.name}
+                </span>
+              ))}
+            </div>
+          )}
+          <p className={project.description ? '' : 'muted'}>
+            {project.description ? clip(project.description, CARD_DESCRIPTION_CHARS) : 'Description coming soon.'}
+          </p>
+          <span className="public-card-more">Read more</span>
+        </div>
+      </button>
+    </li>
+  )
+}
+
 function Drawer({ project, onClose }: { project: PublicProject; onClose: () => void }) {
   const hasLoad = project.sediment_tons != null || project.phosphorus_lb != null || project.nitrogen_lb != null
   return (
-    <aside className="public-drawer" aria-label={project.name}>
+    <aside className="public-drawer" role="dialog" aria-label={project.name}>
       <div className="public-drawer-head">
         <div>
           <div className="public-drawer-stage">{stageName(project.stage)}</div>
@@ -81,8 +137,7 @@ function Drawer({ project, onClose }: { project: PublicProject; onClose: () => v
       </div>
 
       <div className="public-drawer-body">
-        {/* Cover photo goes here once covers come from the project's Drive folder. */}
-        <div className="public-drawer-photo muted small">Photo coming soon</div>
+        <Photo project={project} className="public-drawer-photo" />
 
         {project.practices.length > 0 && (
           <div className="type-tags">
@@ -171,14 +226,14 @@ export default function PublicMap() {
         <div>
           <h1>Our projects</h1>
           <p className="muted public-intro">
-            Conservation practices The Watershed Foundation has helped put on the ground. Click a pin to read about the
-            project.
+            Conservation practices The Watershed Foundation has helped put on the ground. Click a pin or a card to read
+            about the project.
           </p>
         </div>
       </div>
       {error && <p className="error">Couldn't load the projects ({error}).</p>}
 
-      <div className={`public-map-wrap${selected ? ' drawer-open' : ''}`}>
+      <div className="public-map-wrap">
         <MapContainer className="map public" center={DEFAULT_CENTER} zoom={DEFAULT_ZOOM} scrollWheelZoom>
           <BaseLayers />
           <MapBehaviour projects={projects ?? []} selected={selected} onBackground={() => setSelectedId(null)} />
@@ -193,11 +248,20 @@ export default function PublicMap() {
             />
           ))}
         </MapContainer>
-        {selected && <Drawer key={selected.id} project={selected} onClose={() => setSelectedId(null)} />}
         {projects && projects.length === 0 && (
           <div className="public-empty card">No projects are on the public map yet.</div>
         )}
       </div>
+
+      {projects && projects.length > 0 && (
+        <ul className="public-cards" aria-label="Projects">
+          {projects.map((p) => (
+            <Card key={p.id} project={p} active={p.id === selectedId} onOpen={() => setSelectedId(p.id)} />
+          ))}
+        </ul>
+      )}
+
+      {selected && <Drawer key={selected.id} project={selected} onClose={() => setSelectedId(null)} />}
     </div>
   )
 }
