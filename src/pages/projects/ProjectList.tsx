@@ -115,6 +115,17 @@ export default function ProjectList() {
     [projects],
   )
 
+  /** The Public column's checkbox saves straight away. */
+  async function setPublic(p: Project, on: boolean) {
+    setError(null)
+    setProjects((prev) => (prev ?? []).map((x) => (x.id === p.id ? { ...x, is_public: on } : x)))
+    const { error } = await supabase.from('projects').update({ is_public: on }).eq('id', p.id)
+    if (error) {
+      setProjects((prev) => (prev ?? []).map((x) => (x.id === p.id ? { ...x, is_public: !on } : x)))
+      setError(`Couldn't change "${p.name}": ${error.message}`)
+    }
+  }
+
   async function fillMissing() {
     setError(null)
     let done = 0
@@ -262,6 +273,7 @@ export default function ProjectList() {
                   <th>Stage</th>
                   <th>Watershed (HUC-10)</th>
                   <th>Project type</th>
+                  <th className="public-col" title="Shown on the public map">Public</th>
                 </tr>
               </thead>
               <tbody>
@@ -290,6 +302,15 @@ export default function ProjectList() {
                       ) : (
                         <span className="muted small">—</span>
                       )}
+                    </td>
+                    <td className="public-col" onClick={(e) => e.stopPropagation()}>
+                      <input
+                        type="checkbox"
+                        checked={p.is_public}
+                        onChange={(e) => setPublic(p, e.target.checked)}
+                        aria-label={`Show ${p.name} on the public site`}
+                        title={p.latitude == null ? 'Needs a location before it shows on the public map' : 'Show on the public map'}
+                      />
                     </td>
                   </tr>
                 ))}

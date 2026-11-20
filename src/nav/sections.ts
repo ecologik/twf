@@ -17,6 +17,6 @@ export const SECTIONS: Section[] = [
   { path: '/contractors', label: 'Contractors', roles: ['admin'], blurb: 'Companies, insurance expiry, invoicing and on-time record.' },
   { path: '/calculator', label: 'Calculator', roles: ['admin'], blurb: 'Load-reduction estimates for planned practices.' },
   { path: '/funding', label: 'Funding', roles: ['admin'], blurb: '§319, LARE and TWF funds: burn rate, match and reporting windows.' },
-  { path: '/public', label: 'Public', roles: ['admin'], blurb: 'Preview of what the public sees, without landowner names or invoices.' },
+  { path: '/public', label: 'Public', roles: ['admin'], blurb: 'The public map: projects marked "Show on public site", open to everyone without signing in.' },
   { path: '/board', label: 'Board', roles: ['admin', 'board'], blurb: 'Project rundown and donor sheets.' },
 ]
