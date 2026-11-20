@@ -11,6 +11,7 @@ import { driveFolderId, driveFolderUrl } from './drive'
 import MapTab from './MapTab'
 import LoadModelTab from './LoadModelTab'
 import type { FeatureCollection } from 'geojson'
+import StageBar from './StageBar'
 import ProjectTabs, { PROJECT_TABS, TabPlaceholder, type TabKey } from './ProjectTabs'
 import { PROJECT_COLUMNS, type Project } from './types'
 
@@ -47,6 +48,9 @@ export default function ProjectForm() {
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [picking, setPicking] = useState(false)
+  const [stage, setStage] = useState('planning')
+  const [stageBusy, setStageBusy] = useState(false)
+  const [stageError, setStageError] = useState<string | null>(null)
   // The pin's HUC-10 watershed, and which pin ("lat,lng") it was looked up for.
   const [huc, setHuc] = useState<HucInfo | null>(null)
   const [hucFor, setHucFor] = useState<string | null>(null)
@@ -71,6 +75,7 @@ export default function ProjectForm() {
           const p = data as Project
           setName(p.name)
           setSavedName(p.name)
+          setStage(p.stage ?? 'planning')
           setMapShapes(p.map_shapes)
           setDriveLink(p.drive_folder_id ? driveFolderUrl(p.drive_folder_id) : '')
           setLocation(p.location ?? '')
@@ -194,6 +199,21 @@ export default function ProjectForm() {
     else navigate('/projects')
   }
 
+  /** The stage saves straight away, like the prototype's rail. */
+  async function moveStage(next: string) {
+    if (!id) return
+    const before = stage
+    setStage(next)
+    setStageBusy(true)
+    setStageError(null)
+    const { error } = await supabase.from('projects').update({ stage: next }).eq('id', id)
+    setStageBusy(false)
+    if (error) {
+      setStage(before)
+      setStageError(`Couldn't change the stage: ${error.message}`)
+    }
+  }
+
   async function remove() {
     if (!id || !window.confirm(`Delete “${name}”? This can't be undone.`)) return
     setBusy(true)
@@ -211,6 +231,7 @@ export default function ProjectForm() {
       <h1>{isNew ? 'New project' : name || 'Project'}</h1>
 
       {/* A new project gets the other tabs once it has been saved. */}
+      {!isNew && <StageBar stage={stage} busy={stageBusy} error={stageError} onChange={moveStage} />}
       {!isNew && <ProjectTabs active={tab} onChange={setTab} counts={{ map: mapShapes?.features.length || undefined, load: loadCount || undefined }} />}
 
       {tab === 'map' && id ? (

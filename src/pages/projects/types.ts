@@ -12,8 +12,10 @@ export type Project = HucFields & {
   map_shapes: FeatureCollection | null
   /** Google Drive folder for the project's files. */
   drive_folder_id: string | null
+  /** One of STAGES (stages.ts); new projects start in 'planning'. */
+  stage: string
   created_at: string
   updated_at: string
 }
 
-export const PROJECT_COLUMNS = 'id, name, location, description, latitude, longitude, map_shapes, drive_folder_id, huc10, huc10_name, huc8, huc8_name, created_at, updated_at'
+export const PROJECT_COLUMNS = 'id, name, location, description, latitude, longitude, map_shapes, drive_folder_id, stage, huc10, huc10_name, huc8, huc8_name, created_at, updated_at'
