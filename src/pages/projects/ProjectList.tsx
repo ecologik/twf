@@ -8,6 +8,8 @@ import BaseLayers from '../../map/BaseLayers'
 import HucFilter from '../../map/HucFilter'
 import { hucLabel, lookupHuc, matchesHuc } from '../../map/huc'
 import { DEFAULT_CENTER, DEFAULT_ZOOM } from '../../map/leaflet'
+import { StageCell } from './StageBar'
+import { STAGES } from './stages'
 import { PROJECT_COLUMNS, type Project } from './types'
 
 const NONE = '__none__'
@@ -31,6 +33,7 @@ export default function ProjectList() {
   const { types } = usePracticeTypes()
   const [loadTypes, setLoadTypes] = useState<{ project_id: string; practice_type: string | null }[]>([])
   const [picked, setPicked] = useState<Set<string>>(new Set()) // practice type pills; empty = all
+  const [stages, setStages] = useState<Set<string>>(new Set()) // stage pills; empty = all
   const [showMap, setShowMap] = useState(false)
 
   useEffect(() => {
@@ -81,23 +84,29 @@ export default function ProjectList() {
   }, [inWatershed, typesOf, types])
   const typeName = useMemo(() => new Map(types.map((t) => [t.id, t])), [types])
 
-  function togglePill(key: string) {
-    const next = new Set(picked)
+  const stagePills = useMemo(
+    () =>
+      STAGES.map((st) => ({ ...st, n: inWatershed.filter((p) => p.stage === st.id).length })).filter((st) => st.n > 0),
+    [inWatershed],
+  )
+
+  const toggle = (set: Set<string>, key: string) => {
+    const next = new Set(set)
     if (next.has(key)) next.delete(key)
     else next.add(key)
-    setPicked(next)
+    return next
   }
 
   // A project shows if it has any of the picked types.
   const shown = useMemo(
     () =>
-      picked.size === 0
-        ? inWatershed
-        : inWatershed.filter((p) => {
-            const ts = typesOf(p.id)
-            return ts.length ? ts.some((t) => picked.has(t)) : picked.has(NONE)
-          }),
-    [inWatershed, picked, typesOf],
+      inWatershed.filter((p) => {
+        if (stages.size && !stages.has(p.stage)) return false
+        if (!picked.size) return true
+        const ts = typesOf(p.id)
+        return ts.length ? ts.some((t) => picked.has(t)) : picked.has(NONE)
+      }),
+    [inWatershed, picked, stages, typesOf],
   )
   const pinned = useMemo(() => shown.filter((p) => p.latitude != null && p.longitude != null), [shown])
   /** Projects with a pin but no watershed yet (added before watersheds, or USGS was down). */
@@ -159,7 +168,7 @@ export default function ProjectList() {
       {projects && projects.length > 0 && (
         <div className="list-filters">
           <HucFilter rows={projects} value={huc} onChange={setHuc} />
-          {(huc || picked.size > 0) && (
+          {(huc || picked.size > 0 || stages.size > 0) && (
             <span className="muted small">
               {shown.length} of {projects.length} projects
             </span>
@@ -172,8 +181,30 @@ export default function ProjectList() {
         </div>
       )}
 
+      {stagePills.length > 0 && (
+        <div className="pill-row" role="group" aria-label="Filter by stage">
+          <span className="pill-label">Stage</span>
+          <button type="button" className={`pill${stages.size === 0 ? ' on' : ''}`} onClick={() => setStages(new Set())}>
+            All
+          </button>
+          {stagePills.map((st) => (
+            <button
+              key={st.id}
+              type="button"
+              className={`pill${stages.has(st.id) ? ' on' : ''}`}
+              onClick={() => setStages(toggle(stages, st.id))}
+              aria-pressed={stages.has(st.id)}
+            >
+              {st.name}
+              <span className="pill-count">{st.n}</span>
+            </button>
+          ))}
+        </div>
+      )}
+
       {pills.length > 0 && (
         <div className="pill-row" role="group" aria-label="Filter by project type">
+          <span className="pill-label">Type</span>
           <button type="button" className={`pill${picked.size === 0 ? ' on' : ''}`} onClick={() => setPicked(new Set())}>
             All
           </button>
@@ -182,7 +213,7 @@ export default function ProjectList() {
               key={p.key}
               type="button"
               className={`pill${picked.has(p.key) ? ' on' : ''}`}
-              onClick={() => togglePill(p.key)}
+              onClick={() => setPicked(toggle(picked, p.key))}
               aria-pressed={picked.has(p.key)}
             >
               <span className="swatch" style={{ background: p.color }} />
@@ -228,6 +259,7 @@ export default function ProjectList() {
                 <tr>
                   <th>Project</th>
                   <th>Location</th>
+                  <th>Stage</th>
                   <th>Watershed (HUC-10)</th>
                   <th>Project type</th>
                 </tr>
@@ -241,6 +273,9 @@ export default function ProjectList() {
                       </Link>
                     </td>
                     <td className="muted">{p.location ?? '—'}</td>
+                    <td>
+                      <StageCell stage={p.stage} />
+                    </td>
                     <td className="muted small">{p.huc10 ? hucLabel(p.huc10_name, p.huc10) : '—'}</td>
                     <td>
                       {typesOf(p.id).length ? (

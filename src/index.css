@@ -206,7 +206,7 @@ button.icon-button.small-x { width: 1.9rem; height: 1.9rem; border: 0; font-size
 .list-filters { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 0.75rem; }
 select.huc-filter { max-width: 100%; }
 .practice-filter select.huc-filter { width: 100%; font-size: 0.9rem; }
-.pill-row { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 1rem; }
+.pill-row { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem; margin-bottom: 0.6rem; }
 button.pill {
   display: inline-flex; align-items: center; gap: 0.4rem; border-radius: 999px; padding: 0.3rem 0.75rem;
   font-size: 0.85rem; background: var(--surface); color: var(--text);
@@ -219,6 +219,29 @@ button.map-toggle.active { border-color: var(--accent); color: var(--accent); }
 .type-tags { display: flex; flex-wrap: wrap; gap: 0.25rem 0.6rem; }
 .type-tag { display: inline-flex; align-items: center; gap: 0.3rem; font-size: 0.85rem; white-space: nowrap; }
 .type-tag .swatch { width: 10px; height: 10px; }
+.pill-label { min-width: 3.5rem; font-size: 0.8rem; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em; margin-right: 0.2rem; }
+.stage-cell { display: inline-flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; white-space: nowrap; }
+.stage-mini { display: inline-flex; gap: 2px; }
+.stage-mini span { width: 5px; height: 12px; border-radius: 2px; background: var(--border); }
+.stage-mini span.on { background: var(--muted); }
+.stage-card { padding: 0.9rem 1.25rem 0.75rem; margin-bottom: 1rem; }
+.stage-head { display: flex; align-items: baseline; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 0.6rem; }
+.stage-head .card-title { margin: 0; }
+.stage-track { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
+button.stage-seg {
+  display: flex; flex-direction: column; align-items: stretch; gap: 0.35rem; border: 0; background: none;
+  padding: 0; text-align: left; color: var(--muted); font-size: 0.8rem; cursor: pointer;
+}
+button.stage-seg:disabled { cursor: wait; }
+.stage-fill { height: 7px; border-radius: 4px; background: var(--border); }
+button.stage-seg.done .stage-fill { background: var(--accent); }
+button.stage-seg.here .stage-fill { background: var(--accent); box-shadow: 0 0 0 2px var(--surface), 0 0 0 3.5px var(--accent); }
+button.stage-seg.here { color: var(--text); font-weight: 600; }
+button.stage-seg:hover:not(.here) .stage-fill { opacity: 0.7; }
+@media (max-width: 760px) {
+  .stage-lab { display: none; }
+  button.stage-seg.here .stage-lab { display: block; white-space: nowrap; }
+}
 .huc-line { display: flex; flex-direction: column; gap: 0.15rem; }
 .field-head { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; margin-bottom: 0.25rem; }
 .field-head label { display: inline; font-weight: 600; }
@@ -250,7 +273,8 @@ button.danger { color: var(--danger); border-color: var(--danger); margin-left: 
   .map-tab { grid-template-columns: 1fr; }
   .map.drawing { height: 60vh; }
   .map.overview { height: 260px; }
-  table.projects-table th:nth-child(3), table.projects-table td:nth-child(3) { display: none; }
+  table.projects-table th:nth-child(2), table.projects-table td:nth-child(2),
+  table.projects-table th:nth-child(4), table.projects-table td:nth-child(4) { display: none; }
 }
 
 /* Map section filter and practice types admin */
