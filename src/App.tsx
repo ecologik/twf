@@ -4,7 +4,6 @@ import logo from './assets/twf-logo-white.png'
 import { AuthProvider } from './auth/AuthProvider'
 import { useAuth } from './auth/context'
 import RequireRole from './auth/RequireRole'
-import Home from './pages/Home'
 import Login from './pages/Login'
 import Pending from './pages/Pending'
 import Privacy from './pages/Privacy'
@@ -17,6 +16,7 @@ const ProjectList = lazy(() => import('./pages/projects/ProjectList'))
 const ProjectForm = lazy(() => import('./pages/projects/ProjectForm'))
 const AllProjectsMap = lazy(() => import('./pages/map/AllProjectsMap'))
 const PublicMap = lazy(() => import('./pages/public/PublicMap'))
+const Overview = lazy(() => import('./pages/overview/Overview'))
 const PracticeTypes = lazy(() => import('./pages/admin/PracticeTypes'))
 import { SECTIONS } from './nav/sections'
 
@@ -59,7 +59,7 @@ function SubNav() {
         {visible.map((s) => (
           <span key={s.path} className="subnav-item">
             {s.path === '/board' && visible.length > 1 && <span className="subnav-sep" aria-hidden="true" />}
-            <NavLink to={s.path}>{s.label}</NavLink>
+            <NavLink to={s.path} end={s.path === '/'}>{s.label}</NavLink>
           </span>
         ))}
       </div>
@@ -82,12 +82,12 @@ function App() {
               <Route path="/reset-password" element={<ResetPassword />} />
               {/* Open to everyone: reads only public.public_projects() */}
               <Route path="/public" element={<PublicMap />} />
-              <Route path="/" element={<RequireRole allow={['admin']}><Home /></RequireRole>} />
+              <Route path="/" element={<RequireRole allow={['admin']}><Overview /></RequireRole>} />
               <Route path="/projects" element={<RequireRole allow={['admin']}><ProjectList /></RequireRole>} />
               <Route path="/projects/new" element={<RequireRole allow={['admin']}><ProjectForm /></RequireRole>} />
               <Route path="/projects/:id" element={<RequireRole allow={['admin']}><ProjectForm /></RequireRole>} />
               <Route path="/map" element={<RequireRole allow={['admin']}><AllProjectsMap /></RequireRole>} />
-              {SECTIONS.filter((s) => !['/projects', '/map', '/public'].includes(s.path)).map((s) => (
+              {SECTIONS.filter((s) => !['/', '/projects', '/map', '/public'].includes(s.path)).map((s) => (
                 <Route
                   key={s.path}
                   path={s.path}
