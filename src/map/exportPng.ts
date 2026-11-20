@@ -178,23 +178,85 @@ export async function mapToPng(map: L.Map, shapes: ExportShape[], caption?: stri
     }
   }
 
-  // Number badges: in the middle of an area or line (or of a group of
-  // shapes), just above a lone pin.
-  for (const e of entries) {
-    let p: L.Point
-    const only = e.shapes.length === 1 ? e.shapes[0].layer : null
-    if (only instanceof L.Marker) p = pt(only.getLatLng()).subtract([0, 36])
-    else if (only instanceof L.Polyline) p = pt(only.getCenter())
-    else {
-      const b = L.latLngBounds([])
-      for (const { layer } of e.shapes) {
-        if (layer instanceof L.Marker) b.extend(layer.getLatLng())
-        else if (layer instanceof L.Polyline) b.extend(layer.getBounds())
-      }
-      p = pt(b.getCenter()).subtract([0, e.shapes.every((x) => x.layer instanceof L.Marker) ? 36 : 0])
+  // Number badges sit beside their shapes, not on them, with a short leader
+  // line back to the shapes. Each badge tries eight spots around its shapes'
+  // box and takes the first that stays in the picture and clear of the other
+  // shapes and badges.
+  type Box = { x0: number; y0: number; x1: number; y1: number }
+  const boxOf = (list: ExportShape[]): Box => {
+    const b: Box = { x0: Infinity, y0: Infinity, x1: -Infinity, y1: -Infinity }
+    const add = (x0: number, y0: number, x1: number, y1: number) => {
+      b.x0 = Math.min(b.x0, x0)
+      b.y0 = Math.min(b.y0, y0)
+      b.x1 = Math.max(b.x1, x1)
+      b.y1 = Math.max(b.y1, y1)
     }
-    badge(ctx, Math.min(Math.max(p.x, 12), w - 12), Math.min(Math.max(p.y, 12), h - 32), e.number, e.parts[0].color)
+    for (const { layer } of list) {
+      if (layer instanceof L.Marker) {
+        const p = pt(layer.getLatLng())
+        add(p.x - 9, p.y - 26, p.x + 9, p.y) // the pin's own outline
+      } else if (layer instanceof L.Polyline) {
+        const lb = layer.getBounds()
+        const a = pt(lb.getNorthWest())
+        const c = pt(lb.getSouthEast())
+        add(a.x, a.y, c.x, c.y)
+      }
+    }
+    return b
   }
+  const R = 11 // badge radius plus a little air
+  const bottom = h - 24 // keep clear of the credits strip
+  const boxes = entries.map((e) => boxOf(e.shapes))
+  const hitsBox = (x: number, y: number, b: Box) =>
+    x > b.x0 - R && x < b.x1 + R && y > b.y0 - R && y < b.y1 + R
+  const placed: { x: number; y: number }[] = []
+  const DIRS: [number, number][] = [[1, -1], [1, 0], [1, 1], [-1, -1], [-1, 0], [-1, 1], [0, -1], [0, 1]]
+
+  entries.forEach((e, i) => {
+    const b = boxes[i]
+    // The part of the shapes that's in the picture.
+    const v: Box = { x0: Math.max(b.x0, 0), y0: Math.max(b.y0, 0), x1: Math.min(b.x1, w), y1: Math.min(b.y1, bottom) }
+    const cx = (v.x0 + v.x1) / 2
+    const cy = (v.y0 + v.y1) / 2
+    let best: { x: number; y: number; score: number } | null = null
+    DIRS.forEach(([dx, dy], k) => {
+      const gap = dx && dy ? 20 : 28
+      const x = dx > 0 ? v.x1 + gap : dx < 0 ? v.x0 - gap : cx
+      const y = dy > 0 ? v.y1 + gap : dy < 0 ? v.y0 - gap : cy
+      if (x < 12 || x > w - 12 || y < 12 || y > bottom - 12) return
+      let score = k
+      boxes.forEach((o, j) => {
+        if (hitsBox(x, y, o)) score += j === i ? 1000 : 100
+      })
+      for (const q of placed) if (Math.hypot(q.x - x, q.y - y) < 2 * R + 2) score += 500
+      if (!best || score < best.score) best = { x, y, score }
+    })
+    const color = e.parts[0].color
+    const spot = best as { x: number; y: number; score: number } | null
+    if (!spot) {
+      // A shape bigger than the picture: badge in the middle of what shows.
+      const x = Math.min(Math.max(cx, 12), w - 12)
+      const y = Math.min(Math.max(cy, 12), bottom - 12)
+      badge(ctx, x, y, e.number, color)
+      placed.push({ x, y })
+      return
+    }
+    // Leader line from the badge to the nearest edge of the shapes' box.
+    const ex = Math.min(Math.max(spot.x, v.x0), v.x1)
+    const ey = Math.min(Math.max(spot.y, v.y0), v.y1)
+    ctx.lineCap = 'round'
+    ctx.beginPath()
+    ctx.moveTo(spot.x, spot.y)
+    ctx.lineTo(ex, ey)
+    ctx.lineWidth = 4
+    ctx.strokeStyle = 'rgba(255,255,255,0.9)'
+    ctx.stroke()
+    ctx.lineWidth = 2
+    ctx.strokeStyle = color
+    ctx.stroke()
+    badge(ctx, spot.x, spot.y, e.number, color)
+    placed.push(spot)
+  })
   ctx.restore()
 
   // Map credits (bottom right of the map), which the tile providers require
