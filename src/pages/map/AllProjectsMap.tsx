@@ -12,6 +12,30 @@ import { colorPin, styleFor } from '../../map/pins'
 
 type Row = { id: string; name: string; latitude: number | null; longitude: number | null; map_shapes: FeatureCollection | null }
 type Item = { project: Row; feature: Feature; practice: string | null; label: string }
+type Load = {
+  project_id: string
+  practice_type: string | null
+  sediment_tons: number | null
+  phosphorus_lb: number | null
+  nitrogen_lb: number | null
+}
+type Totals = { sed: number; p: number; n: number; entries: number; noSed: number; projects: Set<string> }
+
+function totalsOf(list: Load[]): Totals {
+  const t: Totals = { sed: 0, p: 0, n: 0, entries: 0, noSed: 0, projects: new Set() }
+  for (const l of list) {
+    t.sed += l.sediment_tons ?? 0
+    t.p += l.phosphorus_lb ?? 0
+    t.n += l.nitrogen_lb ?? 0
+    if (l.sediment_tons == null) t.noSed++
+    t.entries++
+    t.projects.add(l.project_id)
+  }
+  return t
+}
+const fmt1 = (n: number) => n.toLocaleString('en-US', { maximumFractionDigits: 1 })
+const short = (t: Totals) =>
+  `${t.noSed === t.entries ? 'no sediment figure' : `${fmt1(t.sed)} t`} · ${fmt1(t.p)} lb P · ${fmt1(t.n)} lb N`
 
 const NONE = '__none__'
 
@@ -22,12 +46,14 @@ const escapeHtml = (s: string) =>
 function Layers({
   items,
   pins,
+  loadOf,
   colorOf,
   nameOf,
   onLayers,
 }: {
   items: Item[]
   pins: Row[]
+  loadOf: (projectId: string) => Totals | null
   colorOf: (p: string | null) => string
   nameOf: (p: string | null) => string
   onLayers: (l: ExportShape[]) => void
@@ -63,7 +89,12 @@ function Layers({
     }
     for (const p of pins) {
       const m = L.marker([p.latitude!, p.longitude!], { icon: PIN_ICON })
-      m.bindPopup(`<strong>${escapeHtml(p.name)}</strong><div><a href="/projects/${p.id}">Open project</a></div>`)
+      const t = loadOf(p.id)
+      m.bindPopup(
+        `<strong>${escapeHtml(p.name)}</strong>` +
+          (t ? `<div>Load reduction: ${escapeHtml(short(t))} per yr</div>` : '') +
+          `<div><a href="/projects/${p.id}${t ? '?tab=load' : ''}">Open project</a></div>`,
+      )
       group.addLayer(m)
     }
     onLayers(drawn)
@@ -76,7 +107,7 @@ function Layers({
     return () => {
       group.remove()
     }
-  }, [map, items, pins, colorOf, nameOf, onLayers])
+  }, [map, items, pins, loadOf, colorOf, nameOf, onLayers])
 
   return null
 }
@@ -88,6 +119,7 @@ function Layers({
 export default function AllProjectsMap() {
   const { types, error: typesError } = usePracticeTypes()
   const [rows, setRows] = useState<Row[] | null>(null)
+  const [loads, setLoads] = useState<Load[]>([])
   const [error, setError] = useState<string | null>(null)
   const [selected, setSelected] = useState<Set<string> | null>(null) // null = everything
   const [showPins, setShowPins] = useState(false)
@@ -103,6 +135,13 @@ export default function AllProjectsMap() {
       .then(({ data, error }) => {
         if (error) setError(error.message)
         else setRows((data ?? []) as Row[])
+      })
+    supabase
+      .from('load_model_entries')
+      .select('project_id, practice_type, sediment_tons, phosphorus_lb, nitrogen_lb')
+      .then(({ data, error }) => {
+        if (error) setError(error.message)
+        else setLoads((data ?? []) as Load[])
       })
   }, [])
 
@@ -127,9 +166,29 @@ export default function AllProjectsMap() {
   const counts = useMemo(() => {
     const c = new Map<string, number>()
     for (const it of allItems) c.set(keyOf(it.practice), (c.get(keyOf(it.practice)) ?? 0) + 1)
+    for (const l of loads) if (!c.has(keyOf(l.practice_type))) c.set(keyOf(l.practice_type), 0)
     return c
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [allItems, known])
+  }, [allItems, loads, known])
+
+  /** Load reduction per practice type key, and per project. */
+  const loadByType = useMemo(() => {
+    const m = new Map<string, Load[]>()
+    for (const l of loads) m.set(keyOf(l.practice_type), [...(m.get(keyOf(l.practice_type)) ?? []), l])
+    return new Map([...m].map(([k, v]) => [k, totalsOf(v)]))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loads, known])
+  const loadOf = useMemo(() => {
+    const m = new Map<string, Load[]>()
+    for (const l of loads) m.set(l.project_id, [...(m.get(l.project_id) ?? []), l])
+    const t = new Map([...m].map(([k, v]) => [k, totalsOf(v)]))
+    return (id: string) => t.get(id) ?? null
+  }, [loads])
+  const shownLoad = useMemo(
+    () => totalsOf(selected ? loads.filter((l) => selected.has(keyOf(l.practice_type))) : loads),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [loads, selected, known],
+  )
 
   const visible = useMemo(
     () => (selected ? allItems.filter((it) => selected.has(keyOf(it.practice))) : allItems),
@@ -192,6 +251,45 @@ export default function AllProjectsMap() {
       </div>
       {(error || typesError) && <p className="error">{error ?? typesError}</p>}
 
+      {loads.length > 0 && (
+        <section className="load-banner" aria-label="Load reduction for the practices shown">
+          <div className="load-banner-head">
+            <strong>Load reduction</strong>
+            <span className="muted small">
+              {selected === null
+                ? 'All practices'
+                : selected.size === 0
+                  ? 'No practices selected'
+                  : choices.filter((c) => selected.has(c.key)).map((c) => c.name).join(', ')}
+              {' · '}
+              {shownLoad.projects.size} {shownLoad.projects.size === 1 ? 'project' : 'projects'}, {shownLoad.entries}{' '}
+              {shownLoad.entries === 1 ? 'calculation' : 'calculations'}
+            </span>
+          </div>
+          <div className="load-banner-values">
+            {(
+              [
+                ['Sediment', shownLoad.sed, 'ton/yr'],
+                ['Phosphorus', shownLoad.p, 'lb/yr'],
+                ['Nitrogen', shownLoad.n, 'lb/yr'],
+              ] as const
+            ).map(([label, v, unit]) => (
+              <div key={label}>
+                <div className="muted small">{label}</div>
+                <div className="load-banner-value">{fmt1(v)}</div>
+                <div className="muted small">{unit}</div>
+              </div>
+            ))}
+          </div>
+          {shownLoad.noSed > 0 && (
+            <p className="muted small">
+              {shownLoad.noSed} {shownLoad.noSed === 1 ? 'calculation has' : 'calculations have'} no sediment figure in
+              the workbook (feedlots), so the sediment total leaves {shownLoad.noSed === 1 ? 'it' : 'them'} out.
+            </p>
+          )}
+        </section>
+      )}
+
       <div className="map-tab">
         <MapContainer
           className="map drawing"
@@ -201,7 +299,7 @@ export default function AllProjectsMap() {
           ref={setMap}
         >
           <BaseLayers satellite />
-          <Layers items={visible} pins={pins} colorOf={colorOf} nameOf={nameOf} onLayers={onLayers} />
+          <Layers items={visible} pins={pins} loadOf={loadOf} colorOf={colorOf} nameOf={nameOf} onLayers={onLayers} />
         </MapContainer>
 
         <aside className="card shape-list practice-filter">
@@ -225,6 +323,7 @@ export default function AllProjectsMap() {
                 <button type="button" className="link small" onClick={() => only(c.key)}>
                   only
                 </button>
+                {loadByType.get(c.key) && <span className="muted practice-load">{short(loadByType.get(c.key)!)}</span>}
               </li>
             ))}
           </ul>

@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState, type DragEvent } from 'react'
 import { supabase } from '../../lib/supabase'
+import { usePracticeTypes, type PracticeType } from '../../lib/practices'
 import { R5_PRACTICES } from '../../loadModel/practices'
-import { fmt, fmt1, PRACTICE_SHEET, SHEET_LABEL, type Detail, type LoadEntryDraft, type SheetKind } from '../../loadModel/labels'
+import { fmt, fmt1, PRACTICE_SHEET, SHEET_LABEL, suggestPracticeType, type Detail, type LoadEntryDraft, type SheetKind } from '../../loadModel/labels'
 import type { SkippedTab } from '../../loadModel/region5'
 import { fromFile, WORKBOOK_SOURCES, type WorkbookFile } from '../../loadModel/sources'
 
@@ -10,6 +11,7 @@ type Entry = {
   name: string
   sheet_kind: SheetKind
   practice: string | null
+  practice_type: string | null
   life_years: number | null
   sediment_tons: number | null
   phosphorus_lb: number | null
@@ -20,10 +22,10 @@ type Entry = {
   source_sheet: string | null
 }
 const COLUMNS =
-  'id, name, sheet_kind, practice, life_years, sediment_tons, phosphorus_lb, nitrogen_lb, bod_lb, details, source_file, source_sheet'
+  'id, name, sheet_kind, practice, practice_type, life_years, sediment_tons, phosphorus_lb, nitrogen_lb, bod_lb, details, source_file, source_sheet'
 
 /** The fields staff can change before (and after) saving. */
-type Editable = { name: string; practice: string | null; life: string }
+type Editable = { name: string; practice: string | null; practiceType: string | null; life: string }
 type DraftRow = { draft: LoadEntryDraft; include: boolean; edit: Editable }
 type Preview = { file: string; rows: DraftRow[]; skipped: SkippedTab[] }
 
@@ -70,7 +72,17 @@ function Details({ rows, bod }: { rows: Detail[]; bod: number | null }) {
   )
 }
 
-function PracticeFields({ kind, value, onChange }: { kind: SheetKind; value: Editable; onChange: (v: Editable) => void }) {
+function PracticeFields({
+  kind,
+  value,
+  types,
+  onChange,
+}: {
+  kind: SheetKind
+  value: Editable
+  types: PracticeType[]
+  onChange: (v: Editable) => void
+}) {
   const sheet = PRACTICE_SHEET[kind]
   const options = R5_PRACTICES.filter((p) => p.sheet === sheet)
   return (
@@ -86,7 +98,13 @@ function PracticeFields({ kind, value, onChange }: { kind: SheetKind; value: Edi
           onChange={(e) => {
             const name = e.target.value || null
             const p = R5_PRACTICES.find((x) => x.name === name)
-            onChange({ ...value, practice: name, life: p?.life != null ? String(p.life) : value.life })
+            const suggested = suggestPracticeType(kind, name, new Set(types.map((t) => t.id)))
+            onChange({
+              ...value,
+              practice: name,
+              life: p?.life != null ? String(p.life) : value.life,
+              practiceType: suggested ?? value.practiceType,
+            })
           }}
         >
           <option value="">{options.length ? '— Pick a practice —' : '— None —'}</option>
@@ -98,15 +116,36 @@ function PracticeFields({ kind, value, onChange }: { kind: SheetKind; value: Edi
           )}
         </select>
       </label>
+      <label>
+        Map practice type
+        <select value={value.practiceType ?? ''} onChange={(e) => onChange({ ...value, practiceType: e.target.value || null })}>
+          <option value="">— None —</option>
+          {types.map((t) => (
+            <option key={t.id} value={t.id}>{t.name}</option>
+          ))}
+        </select>
+      </label>
       <label className="lm-life">
-        Life span (years)
+        Life (years)
         <input inputMode="decimal" value={value.life} onChange={(e) => onChange({ ...value, life: e.target.value })} />
       </label>
     </div>
   )
 }
 
-function CardHead({ name, kind, practice, life }: { name: string; kind: SheetKind; practice: string | null; life: number | null }) {
+function CardHead({
+  name,
+  kind,
+  practice,
+  life,
+  type,
+}: {
+  name: string
+  kind: SheetKind
+  practice: string | null
+  life: number | null
+  type?: PracticeType
+}) {
   return (
     <div className="lm-head">
       <div>
@@ -116,7 +155,14 @@ function CardHead({ name, kind, practice, life }: { name: string; kind: SheetKin
           {practice ? ` · ${practice}` : ''}
         </div>
       </div>
-      {life != null && <span className="lm-chip">{fmt(life)}-yr life</span>}
+      <div className="lm-chips">
+        {type && (
+          <span className="lm-chip">
+            <span className="swatch" style={{ background: type.color }} /> {type.name}
+          </span>
+        )}
+        {life != null && <span className="lm-chip">{fmt(life)}-yr life</span>}
+      </div>
     </div>
   )
 }
@@ -153,7 +199,17 @@ function SumCard({ entries }: { entries: Entry[] }) {
   )
 }
 
-function SavedCard({ entry, onRemove, onSaved }: { entry: Entry; onRemove: () => void; onSaved: (e: Entry) => void }) {
+function SavedCard({
+  entry,
+  types,
+  onRemove,
+  onSaved,
+}: {
+  entry: Entry
+  types: PracticeType[]
+  onRemove: () => void
+  onSaved: (e: Entry) => void
+}) {
   const [editing, setEditing] = useState<Editable | null>(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -162,7 +218,12 @@ function SavedCard({ entry, onRemove, onSaved }: { entry: Entry; onRemove: () =>
     if (!editing) return
     if (!editing.name.trim()) return setError('Give it a name.')
     setBusy(true)
-    const patch = { name: editing.name.trim(), practice: editing.practice, life_years: lifeNumber(editing.life) }
+    const patch = {
+      name: editing.name.trim(),
+      practice: editing.practice,
+      practice_type: editing.practiceType,
+      life_years: lifeNumber(editing.life),
+    }
     const { error } = await supabase.from('load_model_entries').update(patch).eq('id', entry.id)
     setBusy(false)
     if (error) return setError(error.message)
@@ -173,7 +234,13 @@ function SavedCard({ entry, onRemove, onSaved }: { entry: Entry; onRemove: () =>
 
   return (
     <section className="lm-card">
-      <CardHead name={entry.name} kind={entry.sheet_kind} practice={entry.practice} life={entry.life_years} />
+      <CardHead
+        name={entry.name}
+        kind={entry.sheet_kind}
+        practice={entry.practice}
+        life={entry.life_years}
+        type={types.find((t) => t.id === entry.practice_type)}
+      />
       <Results sed={entry.sediment_tons} p={entry.phosphorus_lb} n={entry.nitrogen_lb} />
       <Details rows={entry.details} bod={entry.bod_lb} />
       {entry.source_file && (
@@ -182,7 +249,7 @@ function SavedCard({ entry, onRemove, onSaved }: { entry: Entry; onRemove: () =>
           {entry.source_sheet ? `, ${entry.source_sheet.trim()} tab` : ''}
         </p>
       )}
-      {editing && <PracticeFields kind={entry.sheet_kind} value={editing} onChange={setEditing} />}
+      {editing && <PracticeFields kind={entry.sheet_kind} value={editing} types={types} onChange={setEditing} />}
       {error && <p className="error small">{error}</p>}
       <div className="form-actions lm-actions">
         {editing ? (
@@ -195,7 +262,12 @@ function SavedCard({ entry, onRemove, onSaved }: { entry: Entry; onRemove: () =>
             <button
               type="button"
               onClick={() =>
-                setEditing({ name: entry.name, practice: entry.practice, life: entry.life_years?.toString() ?? '' })
+                setEditing({
+                  name: entry.name,
+                  practice: entry.practice,
+                  practiceType: entry.practice_type,
+                  life: entry.life_years?.toString() ?? '',
+                })
               }
             >
               Edit
@@ -218,6 +290,7 @@ export default function LoadModelTab({ projectId, onCount }: { projectId: string
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [dragging, setDragging] = useState(false)
+  const { types } = usePracticeTypes()
 
   useEffect(() => {
     supabase
@@ -242,20 +315,26 @@ export default function LoadModelTab({ projectId, onCount }: { projectId: string
       // The reader is loaded only when someone imports a workbook.
       const { readRegion5 } = await import('../../loadModel/region5')
       const result = readRegion5(file.data)
+      const typeIds = new Set(types.map((t) => t.id))
       setPreview({
         file: file.name,
         skipped: result.skipped,
         rows: result.entries.map((d) => ({
           draft: d,
           include: true,
-          edit: { name: d.name, practice: d.practice, life: d.life_years?.toString() ?? '' },
+          edit: {
+            name: d.name,
+            practice: d.practice,
+            practiceType: suggestPracticeType(d.sheet_kind, d.practice, typeIds),
+            life: d.life_years?.toString() ?? '',
+          },
         })),
       })
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e))
     }
     setBusy(false)
-  }, [])
+  }, [types])
 
   async function pickFrom(source: (typeof WORKBOOK_SOURCES)[number]) {
     try {
@@ -292,6 +371,7 @@ export default function LoadModelTab({ projectId, onCount }: { projectId: string
       name: edit.name.trim(),
       sheet_kind: d.sheet_kind,
       practice: edit.practice,
+      practice_type: edit.practiceType,
       life_years: lifeNumber(edit.life),
       sediment_tons: d.sediment_tons,
       phosphorus_lb: d.phosphorus_lb,
@@ -347,13 +427,14 @@ export default function LoadModelTab({ projectId, onCount }: { projectId: string
                 kind={r.draft.sheet_kind}
                 practice={r.edit.practice}
                 life={lifeNumber(r.edit.life)}
+                type={types.find((t) => t.id === r.edit.practiceType)}
               />
               <Results sed={r.draft.sediment_tons} p={r.draft.phosphorus_lb} n={r.draft.nitrogen_lb} />
               <Details rows={r.draft.details} bod={r.draft.bod_lb} />
               {r.draft.warnings.map((w) => (
                 <p key={w} className="lm-warning small">⚠ {w}</p>
               ))}
-              {r.include && <PracticeFields kind={r.draft.sheet_kind} value={r.edit} onChange={(edit) => setRow(i, { edit })} />}
+              {r.include && <PracticeFields kind={r.draft.sheet_kind} value={r.edit} types={types} onChange={(edit) => setRow(i, { edit })} />}
             </section>
           ))}
           {preview.skipped.length > 0 && (
@@ -405,6 +486,7 @@ export default function LoadModelTab({ projectId, onCount }: { projectId: string
           {entries.length > 1 && <SumCard entries={entries} />}
           {entries.map((e) => (
             <SavedCard
+              types={types}
               key={e.id}
               entry={e}
               onRemove={() => remove(e)}
