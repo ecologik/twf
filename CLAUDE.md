@@ -17,6 +17,9 @@ Deployed as static files to twf.ecologik.net on Jon's GreenGeeks cPanel VPS (vps
 - Schema changes live as SQL files in `supabase/migrations/`.
 - Edge Functions deploy with `npx -y supabase functions deploy <name>`.
 
+## Fonts
+Montserrat (headings, top bar) and Source Sans 3 (body, tables, forms), self-hosted via `@fontsource-variable/*` imported in `src/main.tsx`. Use `var(--font-heading)` / `var(--font-body)` from `src/index.css`.
+
 ## Routing
 Client-side routes rely on `public/.htaccess` (SPA rewrite). Don't remove it. It also sends `Cache-Control: no-cache` for `index.html`, so Sucuri and browsers pick up each deploy. Hashed `assets/` files stay cacheable.
 

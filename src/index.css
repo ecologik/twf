@@ -13,7 +13,10 @@
   --accent: #56724a;
   --accent-ink: #ffffff;
   --danger: #b4372f;
-  font: 16px/1.5 Inter, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  /* Montserrat for headings and the top bar, Source Sans 3 for everything else */
+  --font-heading: 'Montserrat Variable', 'Montserrat', system-ui, sans-serif;
+  --font-body: 'Source Sans 3 Variable', 'Source Sans 3', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  font: 16px/1.5 var(--font-body);
   color: var(--text);
   background: var(--bg);
   color-scheme: light dark;
@@ -40,6 +43,11 @@
 body { margin: 0; background: var(--bg); }
 main { max-width: 1100px; margin: 0 auto; padding: 1.5rem 1rem; }
 h1 { margin-top: 0; }
+h1, h2, h3, h4, .card-title, .topnav-links a, button.topnav-button {
+  font-family: var(--font-heading);
+}
+h1, h2, h3, h4 { font-weight: 700; line-height: 1.25; letter-spacing: -0.01em; }
+.card-title { font-weight: 600; }
 
 /* Top bar in TWF's website colours */
 .topnav { background: var(--twf-navy); color: #fff; }

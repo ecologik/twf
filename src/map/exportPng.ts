@@ -16,7 +16,7 @@ export type ExportShape = {
 /** One numbered entry: a shape, or several shapes that share a number. */
 type Entry = { number: number; name: string; parts: { practice: string; color: string }[]; shapes: ExportShape[] }
 
-const FONT = 'Inter, system-ui, sans-serif'
+const FONT = "'Source Sans 3 Variable', system-ui, sans-serif"
 
 /** Shortens text with an ellipsis so it fits in `max` pixels. */
 function fit(ctx: CanvasRenderingContext2D, text: string, max: number): string {
