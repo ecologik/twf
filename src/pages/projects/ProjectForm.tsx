@@ -49,6 +49,7 @@ export default function ProjectForm() {
   const [busy, setBusy] = useState(false)
   const [picking, setPicking] = useState(false)
   const [stage, setStage] = useState('planning')
+  const [isPublic, setIsPublic] = useState(false)
   const [stageBusy, setStageBusy] = useState(false)
   const [stageError, setStageError] = useState<string | null>(null)
   // The pin's HUC-10 watershed, and which pin ("lat,lng") it was looked up for.
@@ -76,6 +77,7 @@ export default function ProjectForm() {
           setName(p.name)
           setSavedName(p.name)
           setStage(p.stage ?? 'planning')
+          setIsPublic(!!p.is_public)
           setMapShapes(p.map_shapes)
           setDriveLink(p.drive_folder_id ? driveFolderUrl(p.drive_folder_id) : '')
           setLocation(p.location ?? '')
@@ -185,6 +187,7 @@ export default function ProjectForm() {
       location: location.trim() || null,
       description: description.trim() || null,
       drive_folder_id: folderId,
+      is_public: isPublic,
       latitude: pin?.lat ?? null,
       longitude: pin?.lng ?? null,
       huc10: h?.huc10 ?? null,
@@ -372,6 +375,18 @@ export default function ProjectForm() {
               <p className="muted small field-help">
                 Used in the report package narrative and on the public project page, so it is worth writing for somebody
                 outside the office.
+              </p>
+            </section>
+
+            <section className="card public-card">
+              <label className="check">
+                <input type="checkbox" checked={isPublic} onChange={(e) => setIsPublic(e.target.checked)} />
+                <strong>Show on public site</strong>
+              </label>
+              <p className="muted small">
+                Puts a pin on the <Link to="/public">public map</Link> with the name, description, stage, watershed,
+                practice types and load reduction. Nothing else about the project is public.
+                {isPublic && !pin && ' It needs a location before the pin can appear.'}
               </p>
             </section>
 

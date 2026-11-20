@@ -16,6 +16,7 @@ import SectionPlaceholder from './pages/SectionPlaceholder'
 const ProjectList = lazy(() => import('./pages/projects/ProjectList'))
 const ProjectForm = lazy(() => import('./pages/projects/ProjectForm'))
 const AllProjectsMap = lazy(() => import('./pages/map/AllProjectsMap'))
+const PublicMap = lazy(() => import('./pages/public/PublicMap'))
 const PracticeTypes = lazy(() => import('./pages/admin/PracticeTypes'))
 import { SECTIONS } from './nav/sections'
 
@@ -79,12 +80,14 @@ function App() {
               <Route path="/pending" element={<Pending />} />
               <Route path="/privacy" element={<Privacy />} />
               <Route path="/reset-password" element={<ResetPassword />} />
+              {/* Open to everyone: reads only public.public_projects() */}
+              <Route path="/public" element={<PublicMap />} />
               <Route path="/" element={<RequireRole allow={['admin']}><Home /></RequireRole>} />
               <Route path="/projects" element={<RequireRole allow={['admin']}><ProjectList /></RequireRole>} />
               <Route path="/projects/new" element={<RequireRole allow={['admin']}><ProjectForm /></RequireRole>} />
               <Route path="/projects/:id" element={<RequireRole allow={['admin']}><ProjectForm /></RequireRole>} />
               <Route path="/map" element={<RequireRole allow={['admin']}><AllProjectsMap /></RequireRole>} />
-              {SECTIONS.filter((s) => s.path !== '/projects' && s.path !== '/map').map((s) => (
+              {SECTIONS.filter((s) => !['/projects', '/map', '/public'].includes(s.path)).map((s) => (
                 <Route
                   key={s.path}
                   path={s.path}
