@@ -196,6 +196,17 @@ button.icon-button.small-x { width: 1.9rem; height: 1.9rem; border: 0; font-size
   color: #fff; text-shadow: 0 0 3px #000, 0 0 3px #000, 0 0 2px #000;
 }
 .leaflet-tooltip.shape-label::before { display: none; }
+
+/* HUC watershed outlines, filter and project line */
+.leaflet-tooltip.huc-label {
+  background: none; border: 0; box-shadow: none; padding: 0; font-size: 11px; font-weight: 600;
+  color: #0b4f8a; opacity: 0.7; text-shadow: 0 0 2px #fff, 0 0 2px #fff, 0 0 3px #fff; white-space: nowrap;
+}
+.leaflet-tooltip.huc-label::before { display: none; }
+.list-filters { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 0.75rem; }
+select.huc-filter { max-width: 100%; }
+.practice-filter select.huc-filter { width: 100%; font-size: 0.9rem; }
+.huc-line { display: flex; flex-direction: column; gap: 0.15rem; }
 .field-head { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; margin-bottom: 0.25rem; }
 .field-head label { display: inline; font-weight: 600; }
 .field-head label .muted { font-weight: 400; margin-left: 0.4rem; }
@@ -226,7 +237,7 @@ button.danger { color: var(--danger); border-color: var(--danger); margin-left: 
   .map-tab { grid-template-columns: 1fr; }
   .map.drawing { height: 60vh; }
   .map.overview { height: 260px; }
-  table.list th:nth-child(3), table.list td:nth-child(3) { display: none; }
+  table.projects-table th:nth-child(4), table.projects-table td:nth-child(4) { display: none; }
 }
 
 /* Map section filter and practice types admin */

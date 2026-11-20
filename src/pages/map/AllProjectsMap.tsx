@@ -6,11 +6,19 @@ import { MapContainer, useMap } from 'react-leaflet'
 import { supabase } from '../../lib/supabase'
 import { UNSET_COLOR, usePracticeTypes } from '../../lib/practices'
 import BaseLayers from '../../map/BaseLayers'
+import HucFilter from '../../map/HucFilter'
+import { hucFilterName, matchesHuc, type HucFields } from '../../map/huc'
 import { downloadBlob, mapToPng, type ExportShape } from '../../map/exportPng'
 import { DEFAULT_CENTER, DEFAULT_ZOOM, PIN_ICON } from '../../map/leaflet'
 import { colorPin, styleFor } from '../../map/pins'
 
-type Row = { id: string; name: string; latitude: number | null; longitude: number | null; map_shapes: FeatureCollection | null }
+type Row = HucFields & {
+  id: string
+  name: string
+  latitude: number | null
+  longitude: number | null
+  map_shapes: FeatureCollection | null
+}
 type Item = { project: Row; feature: Feature; practice: string | null; label: string }
 type Load = {
   project_id: string
@@ -118,8 +126,9 @@ function Layers({
  */
 export default function AllProjectsMap() {
   const { types, error: typesError } = usePracticeTypes()
-  const [rows, setRows] = useState<Row[] | null>(null)
-  const [loads, setLoads] = useState<Load[]>([])
+  const [allRows, setRows] = useState<Row[] | null>(null)
+  const [allLoads, setLoads] = useState<Load[]>([])
+  const [huc, setHuc] = useState('') // watershed filter, see matchesHuc
   const [error, setError] = useState<string | null>(null)
   const [selected, setSelected] = useState<Set<string> | null>(null) // null = everything
   const [showPins, setShowPins] = useState(false)
@@ -130,7 +139,7 @@ export default function AllProjectsMap() {
   useEffect(() => {
     supabase
       .from('projects')
-      .select('id, name, latitude, longitude, map_shapes')
+      .select('id, name, latitude, longitude, map_shapes, huc10, huc10_name, huc8, huc8_name')
       .order('name')
       .then(({ data, error }) => {
         if (error) setError(error.message)
@@ -144,6 +153,14 @@ export default function AllProjectsMap() {
         else setLoads((data ?? []) as Load[])
       })
   }, [])
+
+  // The watershed filter narrows everything below to the projects in it.
+  const rows = useMemo(() => (allRows ? allRows.filter((r) => matchesHuc(r, huc)) : null), [allRows, huc])
+  const loads = useMemo(() => {
+    if (!huc || !rows) return allLoads
+    const ids = new Set(rows.map((r) => r.id))
+    return allLoads.filter((l) => ids.has(l.project_id))
+  }, [allLoads, rows, huc])
 
   const allItems = useMemo<Item[]>(
     () =>
@@ -219,8 +236,13 @@ export default function AllProjectsMap() {
     if (!map) return
     setBusy(true)
     try {
+      const where = huc ? hucFilterName(huc, allRows ?? []) : 'all projects'
       const caption =
-        selected && selected.size === 1 ? `${choices.find((c) => selected.has(c.key))?.name} · all projects` : 'All projects'
+        selected && selected.size === 1
+          ? `${choices.find((c) => selected.has(c.key))?.name} · ${where}`
+          : huc
+            ? `Projects in ${where}`
+            : 'All projects'
       // One number per project, counting only what's in the picture, so the
       // key reads 1, 2, 3… with each project's practices beside its name.
       const view = map.getBounds()
@@ -256,6 +278,7 @@ export default function AllProjectsMap() {
           <div className="load-banner-head">
             <strong>Load reduction</strong>
             <span className="muted small">
+              {huc && `${hucFilterName(huc, allRows ?? [])} · `}
               {selected === null
                 ? 'All practices'
                 : selected.size === 0
@@ -298,11 +321,22 @@ export default function AllProjectsMap() {
           scrollWheelZoom
           ref={setMap}
         >
-          <BaseLayers satellite />
+          <BaseLayers satellite highlight={huc.startsWith('10:') ? huc.slice(3) : null} />
           <Layers items={visible} pins={pins} loadOf={loadOf} colorOf={colorOf} nameOf={nameOf} onLayers={onLayers} />
         </MapContainer>
 
         <aside className="card shape-list practice-filter">
+          {allRows && allRows.length > 0 && (
+            <>
+              <h2 className="card-title">Watershed</h2>
+              <HucFilter rows={allRows} value={huc} onChange={setHuc} />
+              {huc && (
+                <p className="muted small">
+                  {rows?.length ?? 0} of {allRows.length} projects
+                </p>
+              )}
+            </>
+          )}
           <h2 className="card-title">Practices</h2>
           {rows === null ? (
             <p className="muted small">Loading…</p>

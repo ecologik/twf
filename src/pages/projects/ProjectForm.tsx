@@ -1,9 +1,10 @@
-import { useCallback, useEffect, useState, type FormEvent } from 'react'
+import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import LocationDialog from '../../map/LocationDialog'
 import type { LatLng } from '../../map/MapPicker'
 import PinIcon from '../../map/PinIcon'
+import { hucLabel, lookupHuc, type HucInfo } from '../../map/huc'
 import { pickDriveFolder, pickerConfigured } from '../../lib/googlePicker'
 import { useAuth } from '../../auth/context'
 import { driveFolderId, driveFolderUrl } from './drive'
@@ -46,6 +47,11 @@ export default function ProjectForm() {
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [picking, setPicking] = useState(false)
+  // The pin's HUC-10 watershed, and which pin ("lat,lng") it was looked up for.
+  const [huc, setHuc] = useState<HucInfo | null>(null)
+  const [hucFor, setHucFor] = useState<string | null>(null)
+  const [hucState, setHucState] = useState<'idle' | 'looking' | 'error'>('idle')
+  const hucLookup = useRef<{ key: string; promise: Promise<HucInfo | null> } | null>(null)
   const [params, setParams] = useSearchParams()
   const tabParam = params.get('tab')
   const tab: TabKey = PROJECT_TABS.some((t) => t.key === tabParam) ? (tabParam as TabKey) : 'overview'
@@ -71,6 +77,10 @@ export default function ProjectForm() {
           setDescription(p.description ?? '')
           setLat(p.latitude?.toString() ?? '')
           setLng(p.longitude?.toString() ?? '')
+          if (p.huc10 && p.latitude != null && p.longitude != null) {
+            setHuc({ huc10: p.huc10, huc10_name: p.huc10_name, huc8_name: p.huc8_name })
+            setHucFor(`${p.latitude},${p.longitude}`)
+          }
         }
         setLoaded(true)
       })
@@ -80,6 +90,43 @@ export default function ProjectForm() {
   const lngN = parseCoord(lng)
   const pin: LatLng | null =
     latN != null && lngN != null && Math.abs(latN) <= 90 && Math.abs(lngN) <= 180 ? { lat: latN, lng: lngN } : null
+
+  const pinKey = pin ? `${pin.lat},${pin.lng}` : ''
+
+  /** Looks up the pin's watershed once per pin, sharing a lookup already under way. */
+  const findHuc = useCallback((p: LatLng): Promise<HucInfo | null> => {
+    const key = `${p.lat},${p.lng}`
+    if (hucLookup.current?.key === key) return hucLookup.current.promise
+    setHucState('looking')
+    const promise = lookupHuc(p.lat, p.lng).then(
+      (h) => {
+        if (hucLookup.current?.key === key) {
+          setHuc(h)
+          setHucFor(key)
+          setHucState('idle')
+        }
+        return h
+      },
+      (e) => {
+        if (hucLookup.current?.key === key) {
+          setHucState('error')
+          hucLookup.current = null
+        }
+        throw e
+      },
+    )
+    hucLookup.current = { key, promise }
+    return promise
+  }, [])
+
+  // A new or moved pin (or an old project without a watershed yet) gets its
+  // watershed looked up shortly after the coordinates stop changing.
+  useEffect(() => {
+    if (!loaded || !pin || hucFor === pinKey) return
+    const t = setTimeout(() => findHuc(pin).catch(() => {}), 600)
+    return () => clearTimeout(t)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loaded, pinKey, hucFor, findHuc])
 
   const folderId = driveFolderId(driveLink)
 
@@ -121,6 +168,13 @@ export default function ProjectForm() {
     if (driveLink.trim() && !folderId) return setError("That doesn't look like a Google Drive folder link.")
 
     setBusy(true)
+    // Make sure the watershed matches the pin being saved. If USGS can't be
+    // reached, save without one; it is looked up again next time the project opens.
+    let h: HucInfo | null = null
+    if (pin) {
+      if (hucFor === pinKey) h = huc
+      else h = await findHuc(pin).catch(() => null)
+    }
     const row = {
       name: name.trim(),
       location: location.trim() || null,
@@ -128,6 +182,9 @@ export default function ProjectForm() {
       drive_folder_id: folderId,
       latitude: pin?.lat ?? null,
       longitude: pin?.lng ?? null,
+      huc10: h?.huc10 ?? null,
+      huc10_name: h?.huc10_name ?? null,
+      huc8_name: h?.huc8_name ?? null,
     }
     const { error } = isNew
       ? await supabase.from('projects').insert(row)
@@ -162,6 +219,7 @@ export default function ProjectForm() {
           projectName={savedName || name}
           center={pin ? [pin.lat, pin.lng] : null}
           initial={mapShapes}
+          huc10={hucFor === pinKey ? huc?.huc10 ?? null : null}
           onSaved={setMapShapes}
         />
       ) : tab === 'load' && id ? (
@@ -250,6 +308,30 @@ export default function ProjectForm() {
                 >
                   <PinIcon />
                 </button>
+              </div>
+              <div className="huc-line">
+                <span className="muted small">Watershed (HUC-10)</span>
+                {!pin ? (
+                  <span className="muted small">Set the location to find its watershed.</span>
+                ) : hucState === 'looking' ? (
+                  <span className="muted small">Looking it up…</span>
+                ) : hucState === 'error' && hucFor !== pinKey ? (
+                  <span className="small">
+                    <span className="error">Couldn't reach the USGS watershed service.</span>{' '}
+                    <button type="button" className="link" onClick={() => findHuc(pin).catch(() => {})}>
+                      Try again
+                    </button>
+                  </span>
+                ) : hucFor === pinKey && huc ? (
+                  <span className="small">
+                    <strong>{hucLabel(huc.huc10_name, huc.huc10)}</strong>
+                    {huc.huc8_name && <span className="muted"> in {hucLabel(huc.huc8_name, huc.huc10.slice(0, 8))}</span>}
+                  </span>
+                ) : hucFor === pinKey ? (
+                  <span className="muted small">The pin is outside the US watershed map.</span>
+                ) : (
+                  <span className="muted small">…</span>
+                )}
               </div>
             </section>
 

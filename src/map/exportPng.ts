@@ -1,4 +1,5 @@
 import L from 'leaflet'
+import { HUC_PANE } from './huc'
 import { drawPin } from './pins'
 
 export type ExportShape = {
@@ -102,20 +103,51 @@ export async function mapToPng(map: L.Map, shapes: ExportShape[], caption?: stri
     }
   }
 
-  // Areas and lines, drawn from their coordinates so they come out crisp.
-  ctx.save()
-  ctx.beginPath()
-  ctx.rect(0, 0, w, h)
-  ctx.clip()
-  for (const { layer, color } of shown) {
-    if (!(layer instanceof L.Polyline)) continue
-    const isArea = layer instanceof L.Polygon
+  const ringsOf = (layer: L.Polyline | L.Polygon) => {
     const rings: L.LatLng[][] = []
     const collect = (x: unknown) => {
       if (Array.isArray(x) && x.length && x[0] instanceof L.LatLng) rings.push(x as L.LatLng[])
       else if (Array.isArray(x)) x.forEach(collect)
     }
     collect(layer.getLatLngs())
+    return rings
+  }
+
+  ctx.save()
+  ctx.beginPath()
+  ctx.rect(0, 0, w, h)
+  ctx.clip()
+
+  // Faint watershed outlines (HucLayer), drawn with the style they have on screen.
+  map.eachLayer((layer) => {
+    if (!(layer instanceof L.Polygon) || layer.options.pane !== HUC_PANE || !view.intersects(layer.getBounds())) return
+    const o = layer.options
+    ctx.beginPath()
+    for (const ring of ringsOf(layer)) {
+      ring.forEach((ll, i) => {
+        const p = pt(ll)
+        if (i === 0) ctx.moveTo(p.x, p.y)
+        else ctx.lineTo(p.x, p.y)
+      })
+      ctx.closePath()
+    }
+    ctx.globalAlpha = o.fillOpacity ?? 0
+    ctx.fillStyle = o.fillColor ?? o.color ?? '#000'
+    ctx.fill('evenodd')
+    ctx.globalAlpha = o.opacity ?? 1
+    ctx.lineWidth = o.weight ?? 1
+    ctx.strokeStyle = o.color ?? '#000'
+    ctx.setLineDash(o.dashArray ? String(o.dashArray).split(/[ ,]+/).map(Number) : [])
+    ctx.stroke()
+    ctx.setLineDash([])
+    ctx.globalAlpha = 1
+  })
+
+  // Areas and lines, drawn from their coordinates so they come out crisp.
+  for (const { layer, color } of shown) {
+    if (!(layer instanceof L.Polyline)) continue
+    const isArea = layer instanceof L.Polygon
+    const rings = ringsOf(layer)
     ctx.beginPath()
     for (const ring of rings) {
       ring.forEach((ll, i) => {

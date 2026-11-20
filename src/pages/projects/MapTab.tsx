@@ -146,12 +146,15 @@ export default function MapTab({
   projectName,
   center,
   initial,
+  huc10,
   onSaved,
 }: {
   projectId: string
   projectName: string
   center: [number, number] | null
   initial: FeatureCollection | null
+  /** The project's watershed, drawn a little stronger than its neighbours. */
+  huc10?: string | null
   onSaved: (fc: FeatureCollection | null) => void
 }) {
   const layers = useRef(new Map<number, L.Layer>())
@@ -266,7 +269,7 @@ export default function MapTab({
           zoom={center ? 16 : DEFAULT_ZOOM}
           scrollWheelZoom
         >
-          <BaseLayers satellite />
+          <BaseLayers satellite highlight={huc10} />
           <DrawTools
             initial={initial}
             layers={layers}
